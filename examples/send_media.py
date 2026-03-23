@@ -4,7 +4,7 @@ from wechat_link import Client
 
 
 def main() -> None:
-client = Client(bot_token="your-bot-token")
+    client = Client(bot_token="your-bot-token")
 
     uploaded = client.upload_image(
         file_path="demo.jpg",

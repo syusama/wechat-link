@@ -78,6 +78,16 @@ for message in updates.messages:
 client.close()
 ```
 
+## Full three-step example
+
+If you want the full onboarding flow in one runnable file, use:
+
+```bash
+python examples/quickstart_three_steps.py
+```
+
+The repository version of that example handles QR login, session persistence, and the echo loop end to end.
+
 ## Project links
 
 - Repository: <https://github.com/syusama/wechat-link>

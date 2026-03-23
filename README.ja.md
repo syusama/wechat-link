@@ -273,6 +273,24 @@ client.close()
 
 ファイル / 動画 / 音声の例は `examples/send_media.py` を参照してください
 
+## クイックスタート完全版
+
+**そのままコピーして試せる一連の流れ**を使いたい場合は、この 3 ステップ例から始めるのが最短です。
+
+実行コマンド:
+
+```bash
+python examples/quickstart_three_steps.py
+```
+
+このスクリプトは次を自動で行います。
+
+1. ログイン用 QR コードを取得し、`.state/wechat-login-qrcode.png` に保存する
+2. QR 状態をポーリングし、`bot_token` などを `.state/wechat-link-session.json` に保存する
+3. 保存した `bot_token` を使って echo ループを起動する
+
+実行可能な完全版は `examples/quickstart_three_steps.py` を参照してください
+
 ## Relay: SDK を HTTP として公開する
 
 Python SDK を別言語や別サービス、社内基盤につなぎたい場合は、内蔵の薄い Relay を使えます。大きなフレームワークにはせず、必要最小限の HTTP 境界だけを提供します。

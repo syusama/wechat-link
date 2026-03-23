@@ -273,6 +273,24 @@ client.close()
 
 For file / video / voice examples, see `examples/send_media.py`
 
+## Fast Onboarding Tutorial
+
+If you want a **copy-paste runnable full flow**, start with this three-step example.
+
+Run it with:
+
+```bash
+python examples/quickstart_three_steps.py
+```
+
+The script will:
+
+1. Request a login QR code and save the QR image to `.state/wechat-login-qrcode.png`
+2. Poll QR status and save `bot_token` plus session metadata to `.state/wechat-link-session.json`
+3. Start an echo loop with the saved `bot_token`
+
+See the runnable example in: `examples/quickstart_three_steps.py`
+
 ## Relay: Expose the SDK as HTTP
 
 If you want to bridge the SDK into another language, service, or internal platform, the built-in relay gives you a thin HTTP boundary without turning the project into a larger framework.
