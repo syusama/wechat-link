@@ -1,4 +1,4 @@
-from wechat_link.client import WeChatLinkClient
+from wechat_link.client import Client
 from wechat_link.models import (
     ConfigResponse,
     LoginQRCode,
@@ -20,6 +20,6 @@ __all__ = [
     "UploadedMedia",
     "UploadUrlResponse",
     "UpdatesResponse",
-    "WeChatLinkClient",
+    "Client",
     "WeixinMessage",
 ]

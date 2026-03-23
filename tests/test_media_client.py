@@ -6,7 +6,7 @@ import httpx
 import pytest
 from PIL import Image
 
-from wechat_link.client import WeChatLinkClient
+from wechat_link.client import Client
 from wechat_link.models import UploadedMedia
 
 
@@ -31,7 +31,7 @@ def test_get_upload_url_posts_expected_payload() -> None:
         }
         return httpx.Response(200, json={"upload_param": "upload-param", "thumb_upload_param": ""})
 
-    client = WeChatLinkClient(
+    client = Client(
         bot_token="bot-token",
         transport=httpx.MockTransport(handler),
         channel_version="0.1.0",
@@ -68,7 +68,7 @@ def test_upload_image_calls_get_upload_url_and_cdn(tmp_path: Path) -> None:
         assert request.url.params["encrypted_query_param"] == "upload-param"
         return httpx.Response(200, headers={"x-encrypted-param": "download-param"})
 
-    client = WeChatLinkClient(
+    client = Client(
         bot_token="bot-token",
         transport=httpx.MockTransport(api_handler),
         cdn_transport=httpx.MockTransport(cdn_handler),
@@ -126,7 +126,7 @@ def test_send_image_posts_expected_message_shape() -> None:
         }
         return httpx.Response(200, json={"ret": 0})
 
-    client = WeChatLinkClient(
+    client = Client(
         bot_token="bot-token",
         transport=httpx.MockTransport(handler),
         channel_version="0.1.0",
@@ -170,7 +170,7 @@ def test_send_file_posts_expected_message_shape() -> None:
         ]
         return httpx.Response(200, json={"ret": 0})
 
-    client = WeChatLinkClient(
+    client = Client(
         bot_token="bot-token",
         transport=httpx.MockTransport(handler),
         channel_version="0.1.0",
@@ -188,7 +188,7 @@ def test_send_file_posts_expected_message_shape() -> None:
 
 
 def test_send_image_requires_context_token() -> None:
-    client = WeChatLinkClient()
+    client = Client()
 
     with pytest.raises(ValueError, match="context_token"):
         client.send_image(
@@ -216,7 +216,7 @@ def test_upload_video_calls_get_upload_url_with_video_media_type(tmp_path: Path)
     def cdn_handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, headers={"x-encrypted-param": "download-param"})
 
-    client = WeChatLinkClient(
+    client = Client(
         bot_token="bot-token",
         transport=httpx.MockTransport(api_handler),
         cdn_transport=httpx.MockTransport(cdn_handler),
@@ -243,7 +243,7 @@ def test_upload_voice_calls_get_upload_url_with_voice_media_type(tmp_path: Path)
     def cdn_handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, headers={"x-encrypted-param": "download-param"})
 
-    client = WeChatLinkClient(
+    client = Client(
         bot_token="bot-token",
         transport=httpx.MockTransport(api_handler),
         cdn_transport=httpx.MockTransport(cdn_handler),
@@ -284,7 +284,7 @@ def test_send_video_posts_expected_message_shape() -> None:
         ]
         return httpx.Response(200, json={"ret": 0})
 
-    client = WeChatLinkClient(
+    client = Client(
         bot_token="bot-token",
         transport=httpx.MockTransport(handler),
         channel_version="0.1.0",
@@ -329,7 +329,7 @@ def test_send_voice_posts_expected_message_shape() -> None:
         ]
         return httpx.Response(200, json={"ret": 0})
 
-    client = WeChatLinkClient(
+    client = Client(
         bot_token="bot-token",
         transport=httpx.MockTransport(handler),
         channel_version="0.1.0",
@@ -375,7 +375,7 @@ def test_upload_video_with_thumb_posts_thumb_metadata_and_uploads_twice(tmp_path
             headers={"x-encrypted-param": f"download-{request.url.params['encrypted_query_param']}"},
         )
 
-    client = WeChatLinkClient(
+    client = Client(
         bot_token="bot-token",
         transport=httpx.MockTransport(api_handler),
         cdn_transport=httpx.MockTransport(cdn_handler),
@@ -437,7 +437,7 @@ def test_send_video_includes_thumb_media_when_present() -> None:
         ]
         return httpx.Response(200, json={"ret": 0})
 
-    client = WeChatLinkClient(
+    client = Client(
         bot_token="bot-token",
         transport=httpx.MockTransport(handler),
         channel_version="0.1.0",

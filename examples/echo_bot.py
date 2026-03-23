@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import time
 
-from wechat_link import FileCursorStore, WeChatLinkClient
+from wechat_link import Client, FileCursorStore
 
 
 def main() -> None:
-    client = WeChatLinkClient(bot_token="your-bot-token")
+client = Client(bot_token="your-bot-token")
     store = FileCursorStore(".state/get_updates_buf.json")
     cursor = store.load() or ""
 

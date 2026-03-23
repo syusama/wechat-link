@@ -3,7 +3,7 @@ import json
 import httpx
 import pytest
 
-from wechat_link.client import WeChatLinkClient
+from wechat_link.client import Client
 
 
 def test_get_bot_qrcode_uses_expected_endpoint() -> None:
@@ -20,7 +20,7 @@ def test_get_bot_qrcode_uses_expected_endpoint() -> None:
             },
         )
 
-    client = WeChatLinkClient(
+    client = Client(
         transport=httpx.MockTransport(handler),
         channel_version="0.1.0",
     )
@@ -58,7 +58,7 @@ def test_get_updates_posts_cursor_and_base_info() -> None:
             },
         )
 
-    client = WeChatLinkClient(
+    client = Client(
         bot_token="bot-token",
         transport=httpx.MockTransport(handler),
         channel_version="0.1.0",
@@ -72,7 +72,7 @@ def test_get_updates_posts_cursor_and_base_info() -> None:
 
 
 def test_send_text_requires_context_token() -> None:
-    client = WeChatLinkClient()
+    client = Client()
 
     with pytest.raises(ValueError, match="context_token"):
         client.send_text(to_user_id="user@im.wechat", text="hi", context_token="")
@@ -97,7 +97,7 @@ def test_send_text_posts_expected_message_shape() -> None:
         }
         return httpx.Response(200, json={"ret": 0})
 
-    client = WeChatLinkClient(
+    client = Client(
         bot_token="bot-token",
         transport=httpx.MockTransport(handler),
         channel_version="0.1.0",
@@ -128,7 +128,7 @@ def test_get_config_posts_expected_payload() -> None:
             json={"ret": 0, "typing_ticket": "typing-1", "errmsg": ""},
         )
 
-    client = WeChatLinkClient(
+    client = Client(
         bot_token="bot-token",
         transport=httpx.MockTransport(handler),
         channel_version="0.1.0",
@@ -153,7 +153,7 @@ def test_send_typing_posts_expected_payload() -> None:
         }
         return httpx.Response(200, json={"ret": 0, "errmsg": ""})
 
-    client = WeChatLinkClient(
+    client = Client(
         bot_token="bot-token",
         transport=httpx.MockTransport(handler),
         channel_version="0.1.0",

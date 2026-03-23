@@ -33,7 +33,7 @@ from wechat_link.models import (
 )
 
 
-class WeChatLinkClient:
+class Client:
     def __init__(
         self,
         *,

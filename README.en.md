@@ -37,9 +37,9 @@ pip install "wechat-link[relay]"
 ### Minimal usage example
 
 ```python
-from wechat_link import WeChatLinkClient
+from wechat_link import Client
 
-client = WeChatLinkClient(bot_token="your-bot-token")
+client = Client(bot_token="your-bot-token")
 updates = client.get_updates(cursor="")
 
 print("next_cursor:", updates.next_cursor)
@@ -186,9 +186,9 @@ pytest -q
 ```python
 import time
 
-from wechat_link import FileCursorStore, WeChatLinkClient
+from wechat_link import Client, FileCursorStore
 
-client = WeChatLinkClient(bot_token="your-bot-token")
+client = Client(bot_token="your-bot-token")
 store = FileCursorStore(".state/get_updates_buf.json")
 cursor = store.load() or ""
 
@@ -225,9 +225,9 @@ The current SDK intentionally provides **QR login primitives**, not a full login
 ```python
 import time
 
-from wechat_link import WeChatLinkClient
+from wechat_link import Client
 
-client = WeChatLinkClient()
+client = Client()
 qr = client.get_bot_qrcode()
 print(qr.qrcode)
 
@@ -250,9 +250,9 @@ That is intentional. At this stage, protocol clarity matters more than adding a 
 ### 3) Send image and video
 
 ```python
-from wechat_link.client import WeChatLinkClient
+from wechat_link import Client
 
-client = WeChatLinkClient(bot_token="your-bot-token")
+client = Client(bot_token="your-bot-token")
 
 uploaded = client.upload_image(
     file_path="demo.jpg",
