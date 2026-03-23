@@ -6,14 +6,27 @@
 ![License](https://img.shields.io/badge/License-MIT-2ea44f)
 ![Scope](https://img.shields.io/badge/Scope-Core%20Protocol-6f42c1)
 ![Protocol](https://img.shields.io/badge/Protocol-iLink--Compatible-0f766e)
+[![GitHub stars](https://img.shields.io/github/stars/syusama/wechat-link?style=social)](https://github.com/syusama/wechat-link)
 
 **iLink 互換の Weixin Bot 連携に向けた、非公式の Python SDK。プロトコル整理、メディア経路、薄い Relay に重点を置いています。**
 
 [简体中文](./README.md) | [English](./README.en.md) | [日本語](./README.ja.md)
 
+[Quick Start](#クイックスタート) · [Capability Matrix](#現在の機能マトリクス) · [Relay](#relaysdk-を-http-サービスとして公開する) · [Contributing](./CONTRIBUTING.md)
+
 </div>
 
 ---
+
+![wechat-link overview](./README.assets/overview.svg)
+
+## ひと目で分かること
+
+| 向いているケース | 向いていないケース |
+| --- | --- |
+| iLink 互換のメッセージ連携を自前の Python サービスに組み込みたい | すぐ使える運用ダッシュボードが欲しい |
+| 受信・送信・メディア経路を自分で制御したい | マルチアカウント管理画面が欲しい |
+| LLM やワークフロー、社内基盤と接続したい | 公式代替のように見せたい |
 
 ## プロジェクトの位置づけ
 

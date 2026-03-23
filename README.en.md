@@ -6,14 +6,27 @@
 ![License](https://img.shields.io/badge/License-MIT-2ea44f)
 ![Scope](https://img.shields.io/badge/Scope-Core%20Protocol-6f42c1)
 ![Protocol](https://img.shields.io/badge/Protocol-iLink--Compatible-0f766e)
+[![GitHub stars](https://img.shields.io/github/stars/syusama/wechat-link?style=social)](https://github.com/syusama/wechat-link)
 
 **An unofficial Python SDK for iLink-compatible Weixin Bot integration, focused on protocol clarity, media workflows, and an optional thin relay.**
 
 [简体中文](./README.md) | [English](./README.en.md) | [日本語](./README.ja.md)
 
+[Quick Start](#quick-start) · [Capability Matrix](#capability-matrix) · [Relay](#relay-expose-the-sdk-as-an-http-service) · [Contributing](./CONTRIBUTING.md)
+
 </div>
 
 ---
+
+![wechat-link overview](./README.assets/overview.svg)
+
+## At a Glance
+
+| Good fit if you want to... | Probably not a fit if you want... |
+| --- | --- |
+| embed iLink-compatible messaging into your own Python service | a ready-made operations dashboard |
+| own the polling, media, and delivery flow yourself | a multi-account control panel |
+| connect Weixin bot capability to LLMs, workflows, and internal systems | something positioned as an official Tencent alternative |
 
 ## Positioning
 

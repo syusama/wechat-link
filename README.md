@@ -6,14 +6,27 @@
 ![License](https://img.shields.io/badge/License-MIT-2ea44f)
 ![Scope](https://img.shields.io/badge/Scope-Core%20Protocol-6f42c1)
 ![Protocol](https://img.shields.io/badge/Protocol-iLink--Compatible-0f766e)
+[![GitHub stars](https://img.shields.io/github/stars/syusama/wechat-link?style=social)](https://github.com/syusama/wechat-link)
 
 **一个面向 iLink-compatible Weixin Bot 集成的非官方 Python SDK，专注协议层、媒体链路与薄中转服务。**
 
 [简体中文](./README.md) | [English](./README.en.md) | [日本語](./README.ja.md)
 
+[快速开始](#快速开始) · [能力矩阵](#当前能力矩阵) · [Relay](#relay把-sdk-暴露为-http-服务) · [贡献指南](./CONTRIBUTING.md)
+
 </div>
 
 ---
+
+![wechat-link overview](./README.assets/overview.svg)
+
+## 一眼看懂
+
+| 适合谁 | 不适合谁 |
+| --- | --- |
+| 想把微信 iLink 协议接入到自有 Python 服务的人 | 想直接拿一个完整运营后台的人 |
+| 需要稳定收消息、发文本、发媒体的人 | 想要群控、营销面板、多账号平台的人 |
+| 想把 Bot 能力接到 LLM、工作流、内部系统的人 | 想把它包装成官方开放平台替代品的人 |
 
 ## 项目定位
 
