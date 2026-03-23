@@ -133,6 +133,7 @@ sequenceDiagram
 | 機能 | 状態 | 備考 |
 | --- | --- | --- |
 | ログイン QR コード取得 | 実装済み | `get_bot_qrcode()` |
+| ターミナル QR 表示 | 実装済み | `render_qrcode_terminal()` / `print_qrcode_terminal()` |
 | QR 状態確認 | 実装済み | `get_qrcode_status()` |
 | 長輪詢での受信 | 実装済み | `get_updates()` |
 | カーソル永続化 | 実装済み | `FileCursorStore` |
@@ -200,12 +201,21 @@ pytest -q
 
 ```python
 import time
+from pathlib import Path
 
 from wechat_link import Client
 
 client = Client()
 qr = client.get_bot_qrcode()
+image_path = client.save_qrcode_image(
+    qr.qrcode_img_content,
+    output_path=Path(".state") / "wechat-login-qrcode.png",
+)
+
 print(qr.qrcode)
+print(image_path)
+print(qr.qrcode_img_content)
+print(client.render_qrcode_terminal(qr.qrcode_img_content))
 
 while True:
     status = client.get_qrcode_status(qr.qrcode)
@@ -221,7 +231,7 @@ while True:
     time.sleep(1)
 ```
 
-ここで最も重要なのは `bot_token` を保存することです。後続の `Client(bot_token=...)` はその値を使います。
+ここで最も重要なのは `bot_token` を保存することです。後続の `Client(bot_token=...)` はその値を使います。現在の `qrcode_img_content` はアクセス可能な URL であり、その URL が生画像ではなく QR ページを返す場合でも、SDK がローカルで本物の QR コードを生成します。`save_qrcode_image(...)` はその結果をローカル画像として保存し、`render_qrcode_terminal(...)` / `print_qrcode_terminal(...)` ならターミナルにも表示できます。
 
 ### 2) `bot_token` で受信して Echo Bot を作る
 
@@ -283,10 +293,12 @@ client.close()
 python examples/quickstart_three_steps.py
 ```
 
+リポジトリ内のサンプルは、まずローカルの `src/wechat_link` を優先して読み込むため、`site-packages` に入っている旧版を誤って使いません。さらに、QR 画像・セッション・カーソルのファイルはリポジトリ直下の `.state/` に保存され、絶対パスも出力されます。
+
 このスクリプトは次を自動で行います。
 
-1. ログイン用 QR コードを取得し、`.state/wechat-login-qrcode.png` に保存する
-2. QR 状態をポーリングし、`bot_token` などを `.state/wechat-link-session.json` に保存する
+1. ログイン用 QR コードを取得し、リポジトリ直下の `.state/wechat-login-qrcode.png` に保存しつつ、ターミナルにも表示する
+2. QR 状態をポーリングし、`bot_token` などをリポジトリ直下の `.state/wechat-link-session.json` に保存する
 3. 保存した `bot_token` を使って echo ループを起動する
 
 実行可能な完全版は `examples/quickstart_three_steps.py` を参照してください

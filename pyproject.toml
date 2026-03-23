@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "wechat-link"
-version = "0.2.0"
+version = "0.2.1"
 description = "Unofficial Python SDK for the iLink-compatible Weixin bot protocol."
 readme = { file = "README.pypi.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
@@ -22,7 +22,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Internet",
 ]
-dependencies = ["httpx>=0.28", "cryptography>=46.0", "pillow>=11.3"]
+dependencies = ["httpx>=0.28", "cryptography>=46.0", "pillow>=11.3", "qrcode>=8.2"]
 
 [project.urls]
 Homepage = "https://github.com/syusama/wechat-link"

@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from _bootstrap import add_repo_src_to_path
+
+add_repo_src_to_path()
+
 from wechat_link import Client
 
 

@@ -129,6 +129,7 @@ sequenceDiagram
 | 能力 | 状态 | 说明 |
 | --- | --- | --- |
 | 获取登录二维码 | 已实现 | `get_bot_qrcode()` |
+| 终端打印二维码 | 已实现 | `render_qrcode_terminal()` / `print_qrcode_terminal()` |
 | 查询二维码状态 | 已实现 | `get_qrcode_status()` |
 | 长轮询收消息 | 已实现 | `get_updates()` |
 | 游标持久化 | 已实现 | `FileCursorStore` |
@@ -196,12 +197,21 @@ pytest -q
 
 ```python
 import time
+from pathlib import Path
 
 from wechat_link import Client
 
 client = Client()
 qr = client.get_bot_qrcode()
+image_path = client.save_qrcode_image(
+    qr.qrcode_img_content,
+    output_path=Path(".state") / "wechat-login-qrcode.png",
+)
+
 print(qr.qrcode)
+print(image_path)
+print(qr.qrcode_img_content)
+print(client.render_qrcode_terminal(qr.qrcode_img_content))
 
 while True:
     status = client.get_qrcode_status(qr.qrcode)
@@ -217,7 +227,7 @@ while True:
     time.sleep(1)
 ```
 
-这里最关键的是把 `bot_token` 保存好。后面的 `Client(bot_token=...)` 就从这里拿值。
+这里最关键的是把 `bot_token` 保存好。后面的 `Client(bot_token=...)` 就从这里拿值。`qrcode_img_content` 当前返回的是一个可访问 URL；如果它指向的是二维码页面而不是原始图片，SDK 会在本地生成真正的二维码图片。`save_qrcode_image(...)` 会把结果保存到本地，`render_qrcode_terminal(...)` / `print_qrcode_terminal(...)` 则可以直接在控制台输出二维码。
 
 ### 2) 使用 `bot_token` 收消息并回显
 
@@ -279,19 +289,22 @@ client.close()
 python examples/quickstart_three_steps.py
 ```
 
+仓库内的示例脚本会优先加载本地 `src/wechat_link`，不会误导入你环境里已安装的旧版 `site-packages/wechat_link`。脚本产生的二维码、会话和游标文件都会落在仓库根目录的 `.state/` 下，并打印绝对路径。
+
 这个脚本会自动完成：
 
-1. 请求登录二维码，并把二维码图片保存到 `.state/wechat-login-qrcode.png`
-2. 轮询扫码状态，登录成功后把 `bot_token` 等信息保存到 `.state/wechat-link-session.json`
+1. 请求登录二维码，并把二维码图片保存到仓库根目录 `.state/wechat-login-qrcode.png`，同时在控制台打印二维码
+2. 轮询扫码状态，登录成功后把 `bot_token` 等信息保存到仓库根目录 `.state/wechat-link-session.json`
 3. 用保存下来的 `bot_token` 启动 echo 循环
 
 完整示例：
 
 ```python
-import base64
 import json
 import time
 from pathlib import Path
+
+import httpx
 
 from wechat_link import Client, FileCursorStore
 
@@ -319,22 +332,17 @@ def save_session(session):
     )
 
 
-def save_qr_image(qrcode_img_content):
+def save_qr_image(client, qrcode_img_content):
     if not qrcode_img_content:
         return None
 
-    payload = qrcode_img_content
-    if "," in qrcode_img_content and qrcode_img_content.startswith("data:"):
-        payload = qrcode_img_content.split(",", 1)[1]
-
     try:
-        image_bytes = base64.b64decode(payload)
+        return client.save_qrcode_image(
+            qrcode_img_content,
+            output_path=QR_IMAGE_PATH,
+        )
     except Exception:
         return None
-
-    ensure_state_dir()
-    QR_IMAGE_PATH.write_bytes(image_bytes)
-    return QR_IMAGE_PATH
 
 
 def login():
@@ -343,14 +351,25 @@ def login():
 
     print("Step 1/3: 请使用微信扫码登录")
     print("qrcode:", qr.qrcode)
+    print("qrcode_url:", qr.qrcode_img_content)
 
-    image_path = save_qr_image(qr.qrcode_img_content)
+    image_path = save_qr_image(client, qr.qrcode_img_content)
     if image_path:
-        print("二维码图片已保存到:", image_path)
+        print("二维码图片已保存到:", image_path.resolve())
+    else:
+        print("未能自动保存二维码图片，请直接打开 qrcode_url")
+
+    print("terminal qr:")
+    client.print_qrcode_terminal(qr.qrcode_img_content)
 
     try:
         while True:
-            status = client.get_qrcode_status(qr.qrcode)
+            try:
+                status = client.get_qrcode_status(qr.qrcode)
+            except httpx.TimeoutException:
+                print("二维码状态查询超时，继续等待...")
+                continue
+
             print("扫码状态:", status.status)
 
             if status.status == "confirmed" and status.bot_token:
@@ -361,7 +380,7 @@ def login():
                     "ilink_user_id": status.ilink_user_id or "",
                 }
                 save_session(session)
-                print("登录成功，凭证已保存到:", SESSION_PATH)
+                print("登录成功，凭证已保存到:", SESSION_PATH.resolve())
                 return session
 
             time.sleep(1)
@@ -390,7 +409,12 @@ def start_echo(session):
 
     try:
         while True:
-            updates = client.get_updates(cursor=cursor)
+            try:
+                updates = client.get_updates(cursor=cursor)
+            except httpx.TimeoutException:
+                print("get_updates 超时，继续轮询...")
+                continue
+
             if updates.next_cursor:
                 cursor = updates.next_cursor
                 store.save(cursor)

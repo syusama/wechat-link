@@ -1,13 +1,23 @@
 from __future__ import annotations
 
 import time
+from pathlib import Path
+
+from _bootstrap import add_repo_src_to_path
+
+add_repo_src_to_path()
 
 from wechat_link import Client, FileCursorStore
 
 
+STATE_DIR = Path(__file__).resolve().parents[1] / ".state"
+CURSOR_PATH = STATE_DIR / "get_updates_buf.json"
+
+
 def main() -> None:
+    STATE_DIR.mkdir(parents=True, exist_ok=True)
     client = Client(bot_token="your-bot-token")
-    store = FileCursorStore(".state/get_updates_buf.json")
+    store = FileCursorStore(CURSOR_PATH)
     cursor = store.load() or ""
 
     try:

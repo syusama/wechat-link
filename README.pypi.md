@@ -40,6 +40,8 @@ If this is your first time using the SDK, follow this order:
 
 The SDK returns `bot_token`, `baseurl`, `ilink_bot_id`, and `ilink_user_id` after QR confirmation. The value you need for `Client(...)` is `bot_token`.
 
+For QR display, `qrcode_img_content` is currently a URL. If that URL points to a QR page instead of a raw image, the SDK generates a real QR locally. `Client.save_qrcode_image(...)` saves it to a local file, while `Client.render_qrcode_terminal(...)` / `Client.print_qrcode_terminal(...)` can render it directly in the terminal.
+
 ## Minimal usage example
 
 ```python
@@ -86,7 +88,7 @@ If you want the full onboarding flow in one runnable file, use:
 python examples/quickstart_three_steps.py
 ```
 
-The repository version of that example handles QR login, session persistence, and the echo loop end to end.
+The repository version of that example handles QR login, session persistence, and the echo loop end to end. When run from the repository, it prefers local `src/wechat_link` first and writes runtime files into the repository `.state/` directory.
 
 ## Project links
 

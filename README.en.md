@@ -133,6 +133,7 @@ sequenceDiagram
 | Capability | Status | Notes |
 | --- | --- | --- |
 | Fetch login QR code | Available | `get_bot_qrcode()` |
+| Print QR in terminal | Available | `render_qrcode_terminal()` / `print_qrcode_terminal()` |
 | Query QR code status | Available | `get_qrcode_status()` |
 | Long-poll inbound updates | Available | `get_updates()` |
 | Persist polling cursor | Available | `FileCursorStore` |
@@ -200,12 +201,21 @@ The current SDK intentionally provides **QR login primitives**, not a full login
 
 ```python
 import time
+from pathlib import Path
 
 from wechat_link import Client
 
 client = Client()
 qr = client.get_bot_qrcode()
+image_path = client.save_qrcode_image(
+    qr.qrcode_img_content,
+    output_path=Path(".state") / "wechat-login-qrcode.png",
+)
+
 print(qr.qrcode)
+print(image_path)
+print(qr.qrcode_img_content)
+print(client.render_qrcode_terminal(qr.qrcode_img_content))
 
 while True:
     status = client.get_qrcode_status(qr.qrcode)
@@ -221,7 +231,7 @@ while True:
     time.sleep(1)
 ```
 
-The main thing to keep is `bot_token`. The next `Client(bot_token=...)` examples use that value.
+The main thing to keep is `bot_token`. The next `Client(bot_token=...)` examples use that value. Right now `qrcode_img_content` is a reachable URL; if that URL points to a QR page instead of a raw image, the SDK generates a real QR code locally. `save_qrcode_image(...)` saves the result as a local image file, and `render_qrcode_terminal(...)` / `print_qrcode_terminal(...)` can render it directly in the terminal.
 
 ### 2) Poll updates and build a simple echo bot
 
@@ -283,10 +293,12 @@ Run it with:
 python examples/quickstart_three_steps.py
 ```
 
+Repository examples prefer local `src/wechat_link` first, so they do not accidentally import an older installed package from `site-packages`. They also write the QR image, session, and cursor files into the repository-level `.state/` directory and print absolute paths.
+
 The script will:
 
-1. Request a login QR code and save the QR image to `.state/wechat-login-qrcode.png`
-2. Poll QR status and save `bot_token` plus session metadata to `.state/wechat-link-session.json`
+1. Request a login QR code, save the QR image to repository `.state/wechat-login-qrcode.png`, and print the QR in the terminal
+2. Poll QR status and save `bot_token` plus session metadata to repository `.state/wechat-link-session.json`
 3. Start an echo loop with the saved `bot_token`
 
 See the runnable example in: `examples/quickstart_three_steps.py`

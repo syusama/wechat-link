@@ -1,14 +1,20 @@
 from __future__ import annotations
 
-import base64
 import json
 import time
 from pathlib import Path
 
+import httpx
+
+from _bootstrap import add_repo_src_to_path
+
+add_repo_src_to_path()
+
 from wechat_link import Client, FileCursorStore
 
 
-STATE_DIR = Path(".state")
+REPO_ROOT = Path(__file__).resolve().parents[1]
+STATE_DIR = REPO_ROOT / ".state"
 SESSION_PATH = STATE_DIR / "wechat-link-session.json"
 CURSOR_PATH = STATE_DIR / "get_updates_buf.json"
 QR_IMAGE_PATH = STATE_DIR / "wechat-login-qrcode.png"
@@ -32,39 +38,57 @@ def save_session(session: dict[str, str]) -> None:
     )
 
 
-def save_qr_image(qrcode_img_content: str) -> Path | None:
+def save_qr_image(client: Client, qrcode_img_content: str) -> Path | None:
     if not qrcode_img_content:
         return None
 
-    payload = qrcode_img_content
-    if "," in qrcode_img_content and qrcode_img_content.startswith("data:"):
-        payload = qrcode_img_content.split(",", 1)[1]
-
     try:
-        image_bytes = base64.b64decode(payload)
+        return client.save_qrcode_image(
+            qrcode_img_content,
+            output_path=QR_IMAGE_PATH,
+        )
     except Exception:
         return None
 
-    ensure_state_dir()
-    QR_IMAGE_PATH.write_bytes(image_bytes)
-    return QR_IMAGE_PATH
+
+def print_qr_in_terminal(client: Client, qrcode_img_content: str) -> bool:
+    if not qrcode_img_content:
+        return False
+
+    try:
+        print("terminal qr:")
+        client.print_qrcode_terminal(qrcode_img_content)
+        return True
+    except Exception:
+        return False
 
 
 def login() -> dict[str, str]:
     client = Client()
     qr = client.get_bot_qrcode()
 
-    print("Step 1/3: 请使用微信扫码登录")
+    print("Step 1/3: scan the QR code with WeChat")
     print("qrcode:", qr.qrcode)
+    print("qrcode_url:", qr.qrcode_img_content)
 
-    image_path = save_qr_image(qr.qrcode_img_content)
+    image_path = save_qr_image(client, qr.qrcode_img_content)
     if image_path:
-        print("二维码图片已保存到:", image_path)
+        print("qr image saved to:", image_path.resolve())
+    else:
+        print("could not save QR image automatically, open qrcode_url directly")
+
+    if not print_qr_in_terminal(client, qr.qrcode_img_content):
+        print("could not render terminal QR automatically")
 
     try:
         while True:
-            status = client.get_qrcode_status(qr.qrcode)
-            print("扫码状态:", status.status)
+            try:
+                status = client.get_qrcode_status(qr.qrcode)
+            except httpx.TimeoutException:
+                print("QR status request timed out, keep waiting...")
+                continue
+
+            print("qr status:", status.status)
 
             if status.status == "confirmed" and status.bot_token:
                 session = {
@@ -74,7 +98,7 @@ def login() -> dict[str, str]:
                     "ilink_user_id": status.ilink_user_id or "",
                 }
                 save_session(session)
-                print("登录成功，凭证已保存到:", SESSION_PATH)
+                print("login confirmed, session saved to:", SESSION_PATH.resolve())
                 return session
 
             time.sleep(1)
@@ -85,13 +109,13 @@ def login() -> dict[str, str]:
 def get_or_login_session() -> dict[str, str]:
     session = load_session()
     if session and session.get("bot_token"):
-        print("Step 1/3: 检测到本地凭证，跳过扫码")
+        print("Step 1/3: found local session, skip QR login")
         return session
     return login()
 
 
 def start_echo(session: dict[str, str]) -> None:
-    print("Step 2/3: 初始化 Client")
+    print("Step 2/3: initialize Client")
     client = Client(
         bot_token=session["bot_token"],
         base_url=session.get("base_url", "https://ilinkai.weixin.qq.com"),
@@ -99,11 +123,16 @@ def start_echo(session: dict[str, str]) -> None:
     store = FileCursorStore(CURSOR_PATH)
     cursor = store.load() or ""
 
-    print("Step 3/3: 启动 echo 循环，给机器人发消息测试")
+    print("Step 3/3: start echo loop")
 
     try:
         while True:
-            updates = client.get_updates(cursor=cursor)
+            try:
+                updates = client.get_updates(cursor=cursor)
+            except httpx.TimeoutException:
+                print("get_updates timed out, continue polling...")
+                continue
+
             if updates.next_cursor:
                 cursor = updates.next_cursor
                 store.save(cursor)
@@ -113,7 +142,7 @@ def start_echo(session: dict[str, str]) -> None:
                 if not text or not message.from_user_id or not message.context_token:
                     continue
 
-                print("收到消息:", text)
+                print("message:", text)
                 client.send_text(
                     to_user_id=message.from_user_id,
                     text=f"echo: {text}",

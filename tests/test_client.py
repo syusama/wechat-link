@@ -1,7 +1,9 @@
 import json
+from io import BytesIO
 
 import httpx
 import pytest
+from PIL import Image
 
 from wechat_link.client import Client
 
@@ -165,3 +167,118 @@ def test_send_typing_posts_expected_payload() -> None:
     )
 
     assert result.ret == 0
+
+
+def test_default_timeout_allows_long_polling_endpoints() -> None:
+    client = Client()
+
+    assert client._client.timeout.read == 45.0
+    assert client._client.timeout.connect == 15.0
+    assert client._client.timeout.write == 15.0
+    assert client._client.timeout.pool == 15.0
+
+    client.close()
+
+
+def test_save_qrcode_image_downloads_from_url(tmp_path) -> None:
+    image_bytes = b"\x89PNG\r\n\x1a\nfake"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == "https://liteapp.weixin.qq.com/q/demo"
+        return httpx.Response(
+            200,
+            content=image_bytes,
+            headers={"Content-Type": "image/png"},
+        )
+
+    client = Client(transport=httpx.MockTransport(handler))
+    output_path = tmp_path / "login-qrcode.png"
+
+    result = client.save_qrcode_image(
+        "https://liteapp.weixin.qq.com/q/demo",
+        output_path=output_path,
+    )
+
+    assert result == output_path
+    assert output_path.read_bytes() == image_bytes
+    client.close()
+
+
+def test_render_qrcode_terminal_from_url() -> None:
+    image = Image.new("1", (2, 2), 1)
+    image.putpixel((0, 0), 0)
+    image.putpixel((1, 0), 1)
+    image.putpixel((0, 1), 1)
+    image.putpixel((1, 1), 0)
+
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    image_bytes = buffer.getvalue()
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == "https://liteapp.weixin.qq.com/q/demo"
+        return httpx.Response(
+            200,
+            content=image_bytes,
+            headers={"Content-Type": "image/png"},
+        )
+
+    client = Client(transport=httpx.MockTransport(handler))
+
+    rendered = client.render_qrcode_terminal(
+        "https://liteapp.weixin.qq.com/q/demo",
+        padding=0,
+    )
+
+    assert rendered.splitlines() == ["██  ", "  ██"]
+    client.close()
+
+
+def test_save_qrcode_image_generates_png_when_url_returns_html(tmp_path) -> None:
+    html_bytes = b"<!doctype html><html><body>qr page</body></html>"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == "https://liteapp.weixin.qq.com/q/demo"
+        return httpx.Response(
+            200,
+            content=html_bytes,
+            headers={"Content-Type": "text/html; charset=utf-8"},
+        )
+
+    client = Client(transport=httpx.MockTransport(handler))
+    output_path = tmp_path / "login-qrcode.png"
+
+    result = client.save_qrcode_image(
+        "https://liteapp.weixin.qq.com/q/demo",
+        output_path=output_path,
+    )
+
+    opened = Image.open(output_path)
+
+    assert result == output_path
+    assert opened.size[0] > 0
+    assert opened.size[1] > 0
+    client.close()
+
+
+def test_render_qrcode_terminal_generates_from_url_when_response_is_html() -> None:
+    html_bytes = b"<!doctype html><html><body>qr page</body></html>"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == "https://liteapp.weixin.qq.com/q/demo"
+        return httpx.Response(
+            200,
+            content=html_bytes,
+            headers={"Content-Type": "text/html; charset=utf-8"},
+        )
+
+    client = Client(transport=httpx.MockTransport(handler))
+
+    rendered = client.render_qrcode_terminal(
+        "https://liteapp.weixin.qq.com/q/demo",
+        padding=0,
+    )
+
+    assert "██" in rendered
+    assert len(rendered.splitlines()) > 10
+    client.close()
