@@ -12,13 +12,41 @@
 
 [简体中文](./README.md) | [English](./README.en.md) | [日本語](./README.ja.md)
 
-[Quick Start](#クイックスタート) · [Capability Matrix](#現在の機能マトリクス) · [Relay](#relaysdk-を-http-サービスとして公開する) · [Contributing](./CONTRIBUTING.md)
+[Install](#インストール) · [Quick Start](#クイックスタート) · [Capability Matrix](#現在の機能マトリクス) · [Relay](#relaysdk-を-http-サービスとして公開する) · [Contributing](./CONTRIBUTING.md)
 
 </div>
 
 ---
 
 ![wechat-link overview](./README.assets/overview.svg)
+
+## すぐにインストール
+
+### PyPI から導入
+
+```bash
+pip install wechat-link
+```
+
+### Relay 依存も入れる
+
+```bash
+pip install "wechat-link[relay]"
+```
+
+### インストール後の最小例
+
+```python
+from wechat_link import WeChatLinkClient
+
+client = WeChatLinkClient(bot_token="your-bot-token")
+updates = client.get_updates(cursor="")
+
+print("next_cursor:", updates.next_cursor)
+print("messages:", len(updates.messages))
+
+client.close()
+```
 
 ## プロジェクトの位置づけ
 
@@ -124,18 +152,24 @@ sequenceDiagram
 
 ## インストール
 
-### ソースから導入
+### PyPI から導入（推奨）
 
 ```bash
-git clone https://github.com/syusama/wechat-link.git
-cd wechat-link
-pip install -e .
+pip install wechat-link
 ```
 
 ### Relay 依存を含めて導入
 
 ```bash
-pip install -e .[relay]
+pip install "wechat-link[relay]"
+```
+
+### ソースから導入（開発向け）
+
+```bash
+git clone https://github.com/syusama/wechat-link.git
+cd wechat-link
+pip install -e .
 ```
 
 ### 開発環境

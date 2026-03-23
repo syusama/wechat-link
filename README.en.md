@@ -12,13 +12,41 @@
 
 [简体中文](./README.md) | [English](./README.en.md) | [日本語](./README.ja.md)
 
-[Quick Start](#quick-start) · [Capability Matrix](#capability-matrix) · [Relay](#relay-expose-the-sdk-as-an-http-service) · [Contributing](./CONTRIBUTING.md)
+[Install](#installation) · [Quick Start](#quick-start) · [Capability Matrix](#capability-matrix) · [Relay](#relay-expose-the-sdk-as-an-http-service) · [Contributing](./CONTRIBUTING.md)
 
 </div>
 
 ---
 
 ![wechat-link overview](./README.assets/overview.svg)
+
+## Install in 30 Seconds
+
+### Install from PyPI
+
+```bash
+pip install wechat-link
+```
+
+### Install relay extras
+
+```bash
+pip install "wechat-link[relay]"
+```
+
+### Minimal usage example
+
+```python
+from wechat_link import WeChatLinkClient
+
+client = WeChatLinkClient(bot_token="your-bot-token")
+updates = client.get_updates(cursor="")
+
+print("next_cursor:", updates.next_cursor)
+print("messages:", len(updates.messages))
+
+client.close()
+```
 
 ## Positioning
 
@@ -124,18 +152,24 @@ sequenceDiagram
 
 ## Installation
 
-### Install from source
+### Install from PyPI (recommended)
 
 ```bash
-git clone https://github.com/syusama/wechat-link.git
-cd wechat-link
-pip install -e .
+pip install wechat-link
 ```
 
 ### Install relay extras
 
 ```bash
-pip install -e .[relay]
+pip install "wechat-link[relay]"
+```
+
+### Install from source (development)
+
+```bash
+git clone https://github.com/syusama/wechat-link.git
+cd wechat-link
+pip install -e .
 ```
 
 ### Development setup

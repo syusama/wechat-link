@@ -12,13 +12,41 @@
 
 [简体中文](./README.md) | [English](./README.en.md) | [日本語](./README.ja.md)
 
-[快速开始](#快速开始) · [能力矩阵](#当前能力矩阵) · [Relay](#relay把-sdk-暴露为-http-服务) · [贡献指南](./CONTRIBUTING.md)
+[安装](#安装) · [快速开始](#快速开始) · [能力矩阵](#当前能力矩阵) · [Relay](#relay把-sdk-暴露为-http-服务) · [贡献指南](./CONTRIBUTING.md)
 
 </div>
 
 ---
 
 ![wechat-link overview](./README.assets/overview.svg)
+
+## 立即安装
+
+### 从 PyPI 安装
+
+```bash
+pip install wechat-link
+```
+
+### 安装 Relay 依赖
+
+```bash
+pip install "wechat-link[relay]"
+```
+
+### 安装后最小示例
+
+```python
+from wechat_link import WeChatLinkClient
+
+client = WeChatLinkClient(bot_token="your-bot-token")
+updates = client.get_updates(cursor="")
+
+print("next_cursor:", updates.next_cursor)
+print("messages:", len(updates.messages))
+
+client.close()
+```
 
 ## 项目定位
 
@@ -120,18 +148,24 @@ sequenceDiagram
 
 ## 安装
 
-### 从源码安装
+### 从 PyPI 安装（推荐）
 
 ```bash
-git clone https://github.com/syusama/wechat-link.git
-cd wechat-link
-pip install -e .
+pip install wechat-link
 ```
 
 ### 安装 Relay 依赖
 
 ```bash
-pip install -e .[relay]
+pip install "wechat-link[relay]"
+```
+
+### 从源码安装（开发场景）
+
+```bash
+git clone https://github.com/syusama/wechat-link.git
+cd wechat-link
+pip install -e .
 ```
 
 ### 开发环境

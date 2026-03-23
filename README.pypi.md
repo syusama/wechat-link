@@ -30,6 +30,20 @@ Relay extras:
 pip install "wechat-link[relay]"
 ```
 
+## Minimal usage example
+
+```python
+from wechat_link import WeChatLinkClient
+
+client = WeChatLinkClient(bot_token="your-bot-token")
+updates = client.get_updates(cursor="")
+
+print("next_cursor:", updates.next_cursor)
+print("messages:", len(updates.messages))
+
+client.close()
+```
+
 ## Quick example
 
 ```python
