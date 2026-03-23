@@ -20,14 +20,6 @@
 
 ![wechat-link overview](./README.assets/overview.svg)
 
-## At a Glance
-
-| Good fit if you want to... | Probably not a fit if you want... |
-| --- | --- |
-| embed iLink-compatible messaging into your own Python service | a ready-made operations dashboard |
-| own the polling, media, and delivery flow yourself | a multi-account control panel |
-| connect Weixin bot capability to LLMs, workflows, and internal systems | something positioned as an official Tencent alternative |
-
 ## Positioning
 
 `wechat-link` is not trying to become an all-in-one bot platform, and it is not presented as a replacement for any official Tencent offering.
@@ -337,63 +329,6 @@ The current implementation already covers:
 - encrypted download parameter propagation
 - message packaging for image / file / video / voice
 
-## Design Principles
-
-### Stabilize the core path first
-Keep the protocol, messaging, and media path solid before adding heavier runtime layers.
-
-### Keep the relay optional
-The relay is a bridge, not a platform.
-
-### Avoid hidden behavior
-Prefer clear, debuggable, explicit behavior over hidden automation.
-
-### Keep the surface area disciplined
-Do fewer things, but do the critical path well.
-
-## Project Layout
-
-```text
-src/wechat_link/
-├── __init__.py
-├── cdn.py
-├── client.py
-├── crypto.py
-├── headers.py
-├── media.py
-├── message_builders.py
-├── models.py
-├── relay.py
-└── store.py
-
-examples/
-├── echo_bot.py
-├── relay_server.py
-└── send_media.py
-
-tests/
-├── test_cdn.py
-├── test_client.py
-├── test_crypto.py
-├── test_cursor_store.py
-├── test_headers.py
-├── test_media_client.py
-├── test_media_helpers.py
-├── test_message_builders.py
-├── test_relay.py
-├── test_relay_helpers.py
-└── test_relay_media.py
-```
-
-## What Comes Next
-
-The near-term roadmap remains intentionally focused on the core path:
-
-- stronger protocol documentation and error semantics
-- better media parameter validation and developer ergonomics
-- keeping the relay thin and predictable
-- adding high-level helpers only when they simplify real integrations without distorting the SDK boundary
-
 ## Explicit Boundaries
 
 `wechat-link` is an **unofficial project**.
@@ -407,15 +342,6 @@ The project also does **not** aim to be:
 - a mass-control platform
 - a marketing automation dashboard
 - a large bot framework tightly coupled to the protocol layer
-
-## Acknowledgements
-
-Protocol research and implementation boundaries were informed by public upstream work and community practice, including:
-- [`hao-ji-xing/cc-weixin`](https://github.com/hao-ji-xing/cc-weixin)
-- the public `openclaw-weixin` source layout
-- existing community experimentation around the iLink Bot protocol
-
-The goal of `wechat-link` is not to clone another project’s product shape, but to shape this protocol surface into a cleaner, more reusable foundation for the Python ecosystem.
 
 ## Contributing
 

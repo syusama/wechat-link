@@ -20,14 +20,6 @@
 
 ![wechat-link overview](./README.assets/overview.svg)
 
-## ひと目で分かること
-
-| 向いているケース | 向いていないケース |
-| --- | --- |
-| iLink 互換のメッセージ連携を自前の Python サービスに組み込みたい | すぐ使える運用ダッシュボードが欲しい |
-| 受信・送信・メディア経路を自分で制御したい | マルチアカウント管理画面が欲しい |
-| LLM やワークフロー、社内基盤と接続したい | 公式代替のように見せたい |
-
 ## プロジェクトの位置づけ
 
 `wechat-link` は、巨大な Bot プラットフォームを目指すものではありません。また、Tencent の公式サービスの代替として見せることも意図していません。
@@ -337,63 +329,6 @@ X-WECHAT-UIN: base64(decimal(random_uint32))
 - 暗号化ダウンロードパラメータの伝播
 - 画像 / ファイル / 動画 / 音声のメッセージ封包
 
-## 設計原則
-
-### まず基礎の経路を安定させる
-重いランタイム層を増やす前に、まずプロトコル、メッセージ処理、メディア経路を安定させる。
-
-### Relay はあくまで任意
-Relay は橋であり、プラットフォームではない。
-
-### 暗黙の挙動を増やさない
-隠れた自動化より、明示的でデバッグしやすい振る舞いを優先する。
-
-### 能力範囲を広げすぎない
-広くやるより、重要な経路を堅く仕上げる。
-
-## プロジェクト構成
-
-```text
-src/wechat_link/
-├── __init__.py
-├── cdn.py
-├── client.py
-├── crypto.py
-├── headers.py
-├── media.py
-├── message_builders.py
-├── models.py
-├── relay.py
-└── store.py
-
-examples/
-├── echo_bot.py
-├── relay_server.py
-└── send_media.py
-
-tests/
-├── test_cdn.py
-├── test_client.py
-├── test_crypto.py
-├── test_cursor_store.py
-├── test_headers.py
-├── test_media_client.py
-├── test_media_helpers.py
-├── test_message_builders.py
-├── test_relay.py
-├── test_relay_helpers.py
-└── test_relay_media.py
-```
-
-## 今後の方針
-
-当面のロードマップも、あくまでコア経路に集中します。
-
-- プロトコル文書とエラー意味論の強化
-- メディアパラメータ検証と開発体験の改善
-- Relay を薄く予測可能なまま保つ
-- SDK 境界を歪めない範囲でのみ、高レベル helper を追加する
-
 ## 明確な境界
 
 `wechat-link` は **非公式プロジェクト** です。
@@ -407,15 +342,6 @@ Tencent を代表するものではなく、公式プラットフォームとし
 - 大規模群制御プラットフォーム
 - マーケティング自動化ダッシュボード
 - プロトコル層と強結合した巨大 Bot フレームワーク
-
-## 謝辞
-
-プロトコル調査と実装境界の整理にあたっては、公開されている上流プロジェクトやコミュニティの実践を参考にしています。主な例は以下です。
-- [`hao-ji-xing/cc-weixin`](https://github.com/hao-ji-xing/cc-weixin)
-- 公開されている `openclaw-weixin` のソース構成
-- iLink Bot プロトコルに関する既存のコミュニティ実践
-
-`wechat-link` の目的は、他プロジェクトのプロダクト形態をそのまま写すことではなく、このプロトコル面を Python エコシステム向けの、より抑制された再利用可能な土台として整理することにあります。
 
 ## コントリビューション
 
