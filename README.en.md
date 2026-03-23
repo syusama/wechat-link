@@ -178,36 +178,23 @@ pip install -e .[dev]
 pytest -q
 ```
 
+## Recommended Flow
+
+For a first integration, follow this order:
+
+1. **Run QR login first** and obtain `bot_token`
+2. **Initialize `Client`** with that `bot_token`
+3. **Start polling, sending messages, and uploading media**
+
+Important detail:
+
+- After QR confirmation, you will typically receive `bot_token`, `baseurl`, `ilink_bot_id`, and `ilink_user_id`
+- The value the SDK actually needs for `Client(...)` is **`bot_token`**
+- `ilink_bot_id` is useful metadata, but it is not a substitute for `bot_token`
+
 ## Quick Start
 
-### 1) Poll updates and build a simple echo bot
-
-```python
-from wechat_link import Client, FileCursorStore
-
-client = Client(bot_token="your-bot-token")
-store = FileCursorStore(".state/get_updates_buf.json")
-cursor = store.load() or ""
-
-updates = client.get_updates(cursor=cursor)
-if updates.next_cursor:
-    store.save(updates.next_cursor)
-
-for message in updates.messages:
-    text = message.text().strip()
-    if text and message.from_user_id and message.context_token:
-        client.send_text(
-            to_user_id=message.from_user_id,
-            text=f"echo: {text}",
-            context_token=message.context_token,
-        )
-
-client.close()
-```
-
-For the full long-poll loop, see `examples/echo_bot.py`
-
-### 2) Low-level QR login primitives
+### 1) Run QR login and get `bot_token`
 
 The current SDK intentionally provides **QR login primitives**, not a full login orchestrator.
 
@@ -234,7 +221,34 @@ while True:
     time.sleep(1)
 ```
 
-That is intentional. At this stage, protocol clarity matters more than adding a heavier runtime layer.
+The main thing to keep is `bot_token`. The next `Client(bot_token=...)` examples use that value.
+
+### 2) Poll updates and build a simple echo bot
+
+```python
+from wechat_link import Client, FileCursorStore
+
+client = Client(bot_token="your-bot-token")
+store = FileCursorStore(".state/get_updates_buf.json")
+cursor = store.load() or ""
+
+updates = client.get_updates(cursor=cursor)
+if updates.next_cursor:
+    store.save(updates.next_cursor)
+
+for message in updates.messages:
+    text = message.text().strip()
+    if text and message.from_user_id and message.context_token:
+        client.send_text(
+            to_user_id=message.from_user_id,
+            text=f"echo: {text}",
+            context_token=message.context_token,
+        )
+
+client.close()
+```
+
+For the full long-poll loop, see `examples/echo_bot.py`
 
 ### 3) Send an image
 

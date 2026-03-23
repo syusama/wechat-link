@@ -174,36 +174,23 @@ pip install -e .[dev]
 pytest -q
 ```
 
+## 上手顺序
+
+第一次接入时，建议按下面的顺序走：
+
+1. **先扫码登录**，拿到 `bot_token`
+2. **再初始化 `Client`**，把 `bot_token` 传进去
+3. **最后开始轮询 / 发消息 / 发媒体**
+
+需要特别注意的是：
+
+- 扫码成功后通常会拿到 `bot_token`、`baseurl`、`ilink_bot_id`、`ilink_user_id`
+- 其中 **SDK 初始化真正要用的是 `bot_token`**
+- `ilink_bot_id` 很有用，但它不是 `Client(...)` 的入参替代品
+
 ## 快速开始
 
-### 1) 使用已有 `bot_token` 收消息并回显
-
-```python
-from wechat_link import Client, FileCursorStore
-
-client = Client(bot_token="your-bot-token")
-store = FileCursorStore(".state/get_updates_buf.json")
-cursor = store.load() or ""
-
-updates = client.get_updates(cursor=cursor)
-if updates.next_cursor:
-    store.save(updates.next_cursor)
-
-for message in updates.messages:
-    text = message.text().strip()
-    if text and message.from_user_id and message.context_token:
-        client.send_text(
-            to_user_id=message.from_user_id,
-            text=f"echo: {text}",
-            context_token=message.context_token,
-        )
-
-client.close()
-```
-
-完整长轮询版本见：`examples/echo_bot.py`
-
-### 2) 底层扫码登录接口
+### 1) 先扫码登录，拿到 `bot_token`
 
 当前版本提供的是**扫码登录原语**，而不是完整的登录编排器。
 
@@ -230,7 +217,34 @@ while True:
     time.sleep(1)
 ```
 
-这里故意保持低封装。现阶段更重要的是把协议边界讲清楚，而不是过早叠加高层运行时。
+这里最关键的是把 `bot_token` 保存好。后面的 `Client(bot_token=...)` 就从这里拿值。
+
+### 2) 使用 `bot_token` 收消息并回显
+
+```python
+from wechat_link import Client, FileCursorStore
+
+client = Client(bot_token="your-bot-token")
+store = FileCursorStore(".state/get_updates_buf.json")
+cursor = store.load() or ""
+
+updates = client.get_updates(cursor=cursor)
+if updates.next_cursor:
+    store.save(updates.next_cursor)
+
+for message in updates.messages:
+    text = message.text().strip()
+    if text and message.from_user_id and message.context_token:
+        client.send_text(
+            to_user_id=message.from_user_id,
+            text=f"echo: {text}",
+            context_token=message.context_token,
+        )
+
+client.close()
+```
+
+完整长轮询版本见：`examples/echo_bot.py`
 
 ### 3) 发送图片
 

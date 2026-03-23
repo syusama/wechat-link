@@ -30,6 +30,16 @@ Relay extras:
 pip install "wechat-link[relay]"
 ```
 
+## Getting started order
+
+If this is your first time using the SDK, follow this order:
+
+1. Run QR login first and obtain `bot_token`
+2. Initialize `Client(bot_token=...)`
+3. Start polling and sending messages
+
+The SDK returns `bot_token`, `baseurl`, `ilink_bot_id`, and `ilink_user_id` after QR confirmation. The value you need for `Client(...)` is `bot_token`.
+
 ## Minimal usage example
 
 ```python

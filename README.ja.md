@@ -178,36 +178,23 @@ pip install -e .[dev]
 pytest -q
 ```
 
+## はじめる順番
+
+初回導入では、次の順番で進めるのが分かりやすいです。
+
+1. **まず QR ログインを実行**して `bot_token` を取得する
+2. **その `bot_token` で `Client` を初期化**する
+3. **その後に受信・送信・メディア処理へ進む**
+
+特に重要なのは次の点です。
+
+- QR ログイン完了後には通常 `bot_token`、`baseurl`、`ilink_bot_id`、`ilink_user_id` が返ります
+- `Client(...)` に渡すべき値は **`bot_token`** です
+- `ilink_bot_id` は有用ですが、`bot_token` の代わりにはなりません
+
 ## クイックスタート
 
-### 1) 更新をポーリングして Echo Bot を作る
-
-```python
-from wechat_link import Client, FileCursorStore
-
-client = Client(bot_token="your-bot-token")
-store = FileCursorStore(".state/get_updates_buf.json")
-cursor = store.load() or ""
-
-updates = client.get_updates(cursor=cursor)
-if updates.next_cursor:
-    store.save(updates.next_cursor)
-
-for message in updates.messages:
-    text = message.text().strip()
-    if text and message.from_user_id and message.context_token:
-        client.send_text(
-            to_user_id=message.from_user_id,
-            text=f"echo: {text}",
-            context_token=message.context_token,
-        )
-
-client.close()
-```
-
-長輪詢の完全な例は `examples/echo_bot.py` を参照してください
-
-### 2) 低レベルの QR ログイン原語
+### 1) まず QR ログインで `bot_token` を取得する
 
 現行バージョンでは、**QR ログインの原語**を提供しており、完全なログインオーケストレータはまだ含めていません。
 
@@ -234,7 +221,34 @@ while True:
     time.sleep(1)
 ```
 
-これは意図的です。現段階では、便利なランタイム機能を増やすより、プロトコル境界を明確に保つことを優先しています。
+ここで最も重要なのは `bot_token` を保存することです。後続の `Client(bot_token=...)` はその値を使います。
+
+### 2) `bot_token` で受信して Echo Bot を作る
+
+```python
+from wechat_link import Client, FileCursorStore
+
+client = Client(bot_token="your-bot-token")
+store = FileCursorStore(".state/get_updates_buf.json")
+cursor = store.load() or ""
+
+updates = client.get_updates(cursor=cursor)
+if updates.next_cursor:
+    store.save(updates.next_cursor)
+
+for message in updates.messages:
+    text = message.text().strip()
+    if text and message.from_user_id and message.context_token:
+        client.send_text(
+            to_user_id=message.from_user_id,
+            text=f"echo: {text}",
+            context_token=message.context_token,
+        )
+
+client.close()
+```
+
+長輪詢の完全な例は `examples/echo_bot.py` を参照してください
 
 ### 3) 画像を送る
 
