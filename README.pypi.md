@@ -36,10 +36,9 @@ pip install "wechat-link[relay]"
 from wechat_link import Client
 
 client = Client(bot_token="your-bot-token")
-updates = client.get_updates(cursor="")
+messages = client.get_updates(cursor="").messages
 
-print("next_cursor:", updates.next_cursor)
-print("messages:", len(updates.messages))
+print("messages:", len(messages))
 
 client.close()
 ```
@@ -47,36 +46,26 @@ client.close()
 ## Quick example
 
 ```python
-import time
-
 from wechat_link import Client, FileCursorStore
 
 client = Client(bot_token="your-bot-token")
 store = FileCursorStore(".state/get_updates_buf.json")
 cursor = store.load() or ""
 
-try:
-    while True:
-        updates = client.get_updates(cursor=cursor)
+updates = client.get_updates(cursor=cursor)
+if updates.next_cursor:
+    store.save(updates.next_cursor)
 
-        if updates.next_cursor:
-            cursor = updates.next_cursor
-            store.save(cursor)
+for message in updates.messages:
+    text = message.text().strip()
+    if text and message.from_user_id and message.context_token:
+        client.send_text(
+            to_user_id=message.from_user_id,
+            text=f"echo: {text}",
+            context_token=message.context_token,
+        )
 
-        for message in updates.messages:
-            text = message.text().strip()
-            if not text or not message.from_user_id or not message.context_token:
-                continue
-
-            client.send_text(
-                to_user_id=message.from_user_id,
-                text=f"echo: {text}",
-                context_token=message.context_token,
-            )
-
-        time.sleep(1)
-finally:
-    client.close()
+client.close()
 ```
 
 ## Project links

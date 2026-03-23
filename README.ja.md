@@ -40,10 +40,9 @@ pip install "wechat-link[relay]"
 from wechat_link import Client
 
 client = Client(bot_token="your-bot-token")
-updates = client.get_updates(cursor="")
+messages = client.get_updates(cursor="").messages
 
-print("next_cursor:", updates.next_cursor)
-print("messages:", len(updates.messages))
+print("messages:", len(messages))
 
 client.close()
 ```
@@ -184,39 +183,29 @@ pytest -q
 ### 1) 更新をポーリングして Echo Bot を作る
 
 ```python
-import time
-
 from wechat_link import Client, FileCursorStore
 
 client = Client(bot_token="your-bot-token")
 store = FileCursorStore(".state/get_updates_buf.json")
 cursor = store.load() or ""
 
-try:
-    while True:
-        updates = client.get_updates(cursor=cursor)
+updates = client.get_updates(cursor=cursor)
+if updates.next_cursor:
+    store.save(updates.next_cursor)
 
-        if updates.next_cursor:
-            cursor = updates.next_cursor
-            store.save(cursor)
+for message in updates.messages:
+    text = message.text().strip()
+    if text and message.from_user_id and message.context_token:
+        client.send_text(
+            to_user_id=message.from_user_id,
+            text=f"echo: {text}",
+            context_token=message.context_token,
+        )
 
-        for message in updates.messages:
-            text = message.text().strip()
-            if not text or not message.from_user_id or not message.context_token:
-                continue
-
-            client.send_text(
-                to_user_id=message.from_user_id,
-                text=f"echo: {text}",
-                context_token=message.context_token,
-            )
-
-        time.sleep(1)
-finally:
-    client.close()
+client.close()
 ```
 
-対応例: `examples/echo_bot.py`
+長輪詢の完全な例は `examples/echo_bot.py` を参照してください
 
 ### 2) 低レベルの QR ログイン原語
 
@@ -247,7 +236,7 @@ while True:
 
 これは意図的です。現段階では、便利なランタイム機能を増やすより、プロトコル境界を明確に保つことを優先しています。
 
-### 3) 画像 / 動画を送る
+### 3) 画像を送る
 
 ```python
 from wechat_link import Client
@@ -265,22 +254,10 @@ client.send_image(
     context_token="ctx-from-inbound-message",
 )
 
-uploaded_video = client.upload_video(
-    file_path="demo.mp4",
-    to_user_id="user@im.wechat",
-    thumb_path="thumb.jpg",
-)
-
-client.send_video(
-    to_user_id="user@im.wechat",
-    uploaded=uploaded_video,
-    context_token="ctx-from-inbound-message",
-)
-
 client.close()
 ```
 
-対応例: `examples/send_media.py`
+ファイル / 動画 / 音声の例は `examples/send_media.py` を参照してください
 
 ## Relay: SDK を HTTP として公開する
 
