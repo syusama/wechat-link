@@ -4,15 +4,18 @@
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-2ea44f)
-![Scope](https://img.shields.io/badge/Scope-Core%20Protocol-6f42c1)
-![Protocol](https://img.shields.io/badge/Protocol-iLink--Compatible-0f766e)
+![Quick Start](https://img.shields.io/badge/Quick%20Start-Scan%20and%20Run-ff6b35)
+![Bridge](https://img.shields.io/badge/Bridge-WeChat%20to%20Apps%20%26%20Agents-0f766e)
 [![GitHub stars](https://img.shields.io/github/stars/syusama/wechat-link?style=social)](https://github.com/syusama/wechat-link)
 
-**An unofficial Python SDK for iLink-compatible Weixin Bot integration, focused on protocol clarity, media workflows, and an optional thin relay.**
+**Connect WeChat to your app, agent, or workflow in one line of code.**
+
+Scan to log in, then use a few lines of Python to receive messages, reply, and send media.  
+No full bot platform to build first. No protocol rabbit hole to fight through first.
 
 [简体中文](./README.md) | [English](./README.en.md) | [日本語](./README.ja.md)
 
-[Install](#installation) · [Quick Start](#quick-start) · [Capability Matrix](#capability-matrix) · [Relay](#relay-expose-the-sdk-as-an-http-service) · [Contributing](./CONTRIBUTING.md)
+[Install](#install-in-30-seconds) · [Why It Feels Easy](#why-it-feels-easy) · [Quick Start](#quick-start) · [Capability Matrix](#capability-matrix) · [Relay](#relay-expose-the-sdk-as-an-http-service) · [Contributing](./CONTRIBUTING.md)
 
 </div>
 
@@ -47,37 +50,36 @@ print("messages:", len(messages))
 client.close()
 ```
 
-## Positioning
+## What It Saves You From
 
-`wechat-link` is not trying to become an all-in-one bot platform, and it is not presented as a replacement for any official Tencent offering.
+When people try to connect WeChat, the real pain is usually not the business logic. It is all the setup friction around it:
 
-Its scope is intentionally narrow and explicit:
+- not wanting to build an entire bot platform just to get WeChat connected
+- not wanting to reverse-engineer login, polling, context tokens, and media upload details
+- not wanting to spend your time on protocol and CDN plumbing instead of your actual product
+- not wanting the integration cost to kill momentum before the project even starts
 
-> **Turn the core iLink / Weixin Bot HTTP protocol into a clean, reusable, embeddable Python SDK, with an optional thin relay on top.**
+`wechat-link` keeps the promise simple:
 
-That means the project prioritizes:
-- a well-defined protocol boundary
-- stable and composable SDK APIs
-- complete media upload / send flows
-- easy integration with your own app, LLM stack, workflow engine, or service backend
+> **Compress WeChat integration into a small amount of clear code so you can get it working first and extend it your own way later.**
 
-Not the following:
-- admin consoles
-- growth / operations platforms
-- multi-account control panels
-- framework-heavy runtime abstractions from day one
+## Why It Feels Easy
 
-## Why `wechat-link`
+- login, receive, reply, typing, and media flows are already wired up
+- it drops into an existing Python app without forcing a new stack or platform
+- use the SDK directly, or add the thin relay if you want to expose it over HTTP
+- keep your business logic, agents, workflows, and internal systems organized your way
+- the project stays intentionally small instead of turning into a heavy “everything platform”
 
-Many projects in this space quickly grow into “bot applications” where protocol handling, runtime state, business logic, and product features are tightly coupled.
+## Good Fit For
 
-`wechat-link` takes a more restrained approach:
+- connecting WeChat to an existing app, internal tool, or automation flow
+- letting an LLM, agent, or workflow send and receive through WeChat
+- getting the message path working first, then layering business logic on top
+- keeping control over your code, deployment model, and integration boundaries
 
-- stabilize login primitives, polling, messaging, typing, and media flows first
-- keep the relay as a thin wrapper over the SDK, not a second product
-- put protocol details into explicit models and interfaces
-- make the SDK easy to integrate with FastAPI, Django, LangChain, queues, and internal services
-- avoid promising surface area that the project does not actually maintain
+This is still an unofficial project, and it is not pretending to be an official Tencent replacement.  
+If you want a full operations console or a multi-account platform, that is not the goal here. If you want a **simple, fast, embeddable way to connect WeChat**, this project is built for that.
 
 ## Architecture
 

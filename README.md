@@ -4,15 +4,18 @@
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-2ea44f)
-![Scope](https://img.shields.io/badge/Scope-Core%20Protocol-6f42c1)
-![Protocol](https://img.shields.io/badge/Protocol-iLink--Compatible-0f766e)
+![Quick Start](https://img.shields.io/badge/Quick%20Start-Scan%20and%20Run-ff6b35)
+![Bridge](https://img.shields.io/badge/Bridge-WeChat%20to%20Apps%20%26%20Agents-0f766e)
 [![GitHub stars](https://img.shields.io/github/stars/syusama/wechat-link?style=social)](https://github.com/syusama/wechat-link)
 
-**一个面向 iLink-compatible Weixin Bot 集成的非官方 Python SDK，专注协议层、媒体链路与薄中转服务。**
+**一行代码桥接微信，把你的应用、Agent、工作流直接接进聊天窗口。**
+
+扫码就能登录，几行代码就能收消息、回消息、发图片/文件。  
+不用先搭后台，不用先造平台，也不用先啃一堆协议细节。
 
 [简体中文](./README.md) | [English](./README.en.md) | [日本語](./README.ja.md)
 
-[安装](#安装) · [快速开始](#快速开始) · [能力矩阵](#当前能力矩阵) · [Relay](#relay把-sdk-暴露为-http-服务) · [贡献指南](./CONTRIBUTING.md)
+[安装](#立即安装) · [为什么用起来省心](#为什么用起来省心) · [快速开始](#快速开始) · [能力矩阵](#当前能力矩阵) · [Relay](#relay把-sdk-暴露为-http-服务) · [贡献指南](./CONTRIBUTING.md)
 
 </div>
 
@@ -47,33 +50,36 @@ print("messages:", len(messages))
 client.close()
 ```
 
-## 项目定位
+## 这个项目到底帮你省掉了什么
 
-`wechat-link` 不是一个“大而全”的机器人平台，也不是一个包装成“官方开放平台替代品”的外壳。
+很多人接微信时，真正卡住的不是业务逻辑，而是这些麻烦事：
 
-它的定位非常明确：
+- 不想为了“接个微信”先搭一整套机器人平台
+- 不想自己研究登录、轮询、上下文、媒体上传这些细节
+- 不想把时间花在协议和 CDN 链路上，而不是花在自己的产品上
+- 不想项目刚开始就被接入成本劝退
 
-> **把 iLink / 微信 Bot 的关键 HTTP 协议整理成一个干净、可复用、可嵌入、可持续维护的 Python SDK，并提供一个可选的薄 Relay。**
+`wechat-link` 做的事情很简单：
 
-这意味着它优先解决的是：
-- 协议边界是否清晰
-- SDK 是否足够稳定、可读、可组合
-- 媒体上传链路是否完整
-- 是否能方便接入自己的应用、LLM、工作流或服务端
+> **把“微信接入”这件事压缩成少量清晰代码，让你先跑起来，再按自己的方式扩展。**
 
-而不是一开始就去做：后台系统、群控平台、多账号运营面板、复杂业务编排。
+## 为什么用起来省心
 
-## 为什么是 `wechat-link`
+- 登录、收消息、回消息、typing、图片/文件/视频/语音链路都已经接好
+- 可以直接嵌进你现有的 Python 应用，不强迫你换技术栈
+- 想直接写 SDK 就直接写；想暴露成 HTTP 服务，再开一个薄 Relay 就够了
+- 业务逻辑、Agent、工作流、内部系统都可以继续按你的方式组织
+- 整体边界很克制，不会为了“看起来很全”把项目拖成一个笨重平台
 
-大多数相关项目会很快长成一个“机器人应用”，协议层、业务逻辑、运行时状态、平台功能缠在一起，短期看上去很快，长期却很难维护。
+## 适合什么场景
 
-`wechat-link` 的处理方式相对克制：
+- 想把微信接到现有应用、内部系统或自动化流程里
+- 想让 LLM / Agent / 工作流直接通过微信收发消息
+- 想先把链路跑通，再逐步补业务能力，而不是先做后台和控制台
+- 想自己掌控代码、部署和集成方式，不想被一个大平台绑定
 
-- 先把登录、轮询、发消息、typing、媒体链路做稳
-- Relay 只是 SDK 的一层薄封装，不再额外造一套系统
-- 协议细节尽量落到明确的数据结构和接口里
-- 默认考虑接入 FastAPI、Django、LangChain、任务队列和内部服务
-- 少承诺还没做好的能力，优先把核心链路维护清楚
+它不是官方 SDK，也不打算假装成“官方开放平台替代品”。  
+如果你要的是完整运营后台、群控系统或重度业务编排，这不是当前目标；如果你要的是**简单、快捷、可嵌入地把微信接起来**，它就是为这个场景准备的。
 
 ## 架构概览
 

@@ -4,15 +4,18 @@
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-2ea44f)
-![Scope](https://img.shields.io/badge/Scope-Core%20Protocol-6f42c1)
-![Protocol](https://img.shields.io/badge/Protocol-iLink--Compatible-0f766e)
+![Quick Start](https://img.shields.io/badge/Quick%20Start-Scan%20and%20Run-ff6b35)
+![Bridge](https://img.shields.io/badge/Bridge-WeChat%20to%20Apps%20%26%20Agents-0f766e)
 [![GitHub stars](https://img.shields.io/github/stars/syusama/wechat-link?style=social)](https://github.com/syusama/wechat-link)
 
-**iLink 互換の Weixin Bot 連携に向けた、非公式の Python SDK。プロトコル整理、メディア経路、薄い Relay に重点を置いています。**
+**1行で WeChat をつなぐ。アプリ、Agent、ワークフローをそのままチャット画面へ。**
+
+QR を読み取ってログインすれば、数行の Python で受信、返信、画像やファイル送信まで始められます。  
+先に大きな Bot 基盤を作る必要も、複雑なプロトコルを掘る必要もありません。
 
 [简体中文](./README.md) | [English](./README.en.md) | [日本語](./README.ja.md)
 
-[Install](#インストール) · [Quick Start](#クイックスタート) · [Capability Matrix](#現在の機能マトリクス) · [Relay](#relaysdk-を-http-サービスとして公開する) · [Contributing](./CONTRIBUTING.md)
+[インストール](#すぐにインストール) · [使いやすい理由](#使いやすい理由) · [クイックスタート](#クイックスタート) · [機能マトリクス](#現在の機能マトリクス) · [Relay](#relaysdk-を-http-サービスとして公開する) · [Contributing](./CONTRIBUTING.md)
 
 </div>
 
@@ -47,37 +50,36 @@ print("messages:", len(messages))
 client.close()
 ```
 
-## プロジェクトの位置づけ
+## このプロジェクトが省いてくれるもの
 
-`wechat-link` は、巨大な Bot プラットフォームを目指すものではありません。また、Tencent の公式サービスの代替として見せることも意図していません。
+WeChat 連携で本当に大変なのは、業務ロジックそのものより、接続までの面倒さであることが多いです。
 
-このプロジェクトの狙いは、かなり明確です。
+- WeChat をつなぐだけなのに、最初から大きな Bot プラットフォームを作りたくない
+- ログイン、ポーリング、context token、メディア送信の細部を自分で追いたくない
+- プロトコルや CDN の配線より、自分のプロダクトに時間を使いたい
+- 連携コストの高さで、作り始める前に勢いを失いたくない
 
-> **iLink / Weixin Bot の主要な HTTP プロトコルを、クリーンで再利用しやすく、組み込みやすい Python SDK として整理し、その上に任意で薄い Relay を載せること。**
+`wechat-link` がやることはシンプルです。
 
-そのため、優先するのは次の点です。
-- プロトコル境界が明確であること
-- SDK API が安定していて組み合わせやすいこと
-- メディアのアップロード / 送信フローが通っていること
-- 自前アプリ、LLM、ワークフロー、社内サービスに接続しやすいこと
+> **WeChat 連携を少量の分かりやすいコードに圧縮して、まず動かし、その後は自分のやり方で広げられるようにすること。**
 
-逆に、次のようなものを最初から目標にはしていません。
-- 管理コンソール
-- 運用プラットフォーム
-- マルチアカウント管理画面
-- 重いランタイム抽象を前提とした Bot フレームワーク
+## 使いやすい理由
 
-## なぜ `wechat-link` なのか
+- ログイン、受信、返信、typing、画像/ファイル/動画/音声の流れが最初からそろっている
+- 既存の Python アプリにそのまま組み込みやすく、新しい技術スタックを強制しない
+- SDK を直接使ってもよいし、HTTP 化したければ薄い Relay を足すだけでよい
+- 業務ロジック、Agent、ワークフロー、社内システムは自分の構成のまま保てる
+- 何でも入りの巨大基盤にせず、扱いやすい範囲に意図的に絞っている
 
-この領域のプロジェクトは、すぐに「Bot アプリケーション」へ膨らみがちです。すると、プロトコル処理、状態管理、業務ロジック、プロダクト機能が強く結びつき、保守が難しくなります。
+## 向いている場面
 
-`wechat-link` は、もう少し抑制的な設計を取ります。
+- WeChat を既存アプリ、社内ツール、自動化フローにつなぎたい
+- LLM / Agent / ワークフローから WeChat で送受信したい
+- まず通信経路を通し、その後に業務機能を積み上げたい
+- コード、デプロイ、統合境界を自分でコントロールしたい
 
-- まずはログイン原語、ポーリング、メッセージ送信、typing、メディア経路を安定させる
-- Relay は SDK の薄いラッパーとして保ち、別の製品にはしない
-- プロトコルの詳細は明示的なモデルとインターフェースに落とし込む
-- FastAPI、Django、LangChain、ジョブキュー、社内基盤に接続しやすくする
-- 実際に維持できる範囲を超えて約束しない
+このプロジェクトは非公式であり、Tencent の公式代替を装うものではありません。  
+運用コンソールやマルチアカウント基盤が欲しいなら目的が違います。必要なのが **シンプルで、速く、組み込みやすい WeChat 連携** なら、そのために作られています。
 
 ## アーキテクチャ
 

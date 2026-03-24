@@ -1,8 +1,10 @@
 # wechat-link
 
-Unofficial Python SDK for iLink-compatible Weixin Bot integration.
+Connect WeChat to your app, agent, or workflow with a small amount of Python.
 
-`wechat-link` 是一个面向 iLink-compatible Weixin Bot 集成的 Python SDK，重点放在协议层、媒体链路和一个可选的轻量 Relay 上，而不是去做一个大而全的 Bot 平台。
+Scan to log in, then receive messages, reply, and send media without building a full bot platform first.
+
+`wechat-link` is an unofficial Python SDK for iLink-compatible Weixin Bot integration. It keeps the path intentionally simple: get connected fast, then extend the integration your own way.
 
 ## What it currently provides
 
