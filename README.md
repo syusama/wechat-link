@@ -191,9 +191,22 @@ pytest -q
 
 ## 快速开始
 
-### 1) 先扫码登录，拿到 `bot_token`
+### 1) 先登录，保存本地 session
 
-当前版本提供的是**扫码登录原语**，而不是完整的登录编排器。
+最简单的运行方式：
+
+```bash
+python examples/login_session.py
+```
+
+这个脚本会：
+
+- 拉取登录二维码
+- 把二维码保存到 `.state/wechat-login-qrcode.png`
+- 在控制台打印二维码
+- 扫码成功后把 `bot_token` 等信息保存到 `.state/wechat-link-session.json`
+
+如果你更想看最核心的 SDK 调用，登录本质上就是下面这几步：
 
 ```python
 import time
@@ -227,42 +240,96 @@ while True:
     time.sleep(1)
 ```
 
-这里最关键的是把 `bot_token` 保存好。后面的 `Client(bot_token=...)` 就从这里拿值。`qrcode_img_content` 当前返回的是一个可访问 URL；如果它指向的是二维码页面而不是原始图片，SDK 会在本地生成真正的二维码图片。`save_qrcode_image(...)` 会把结果保存到本地，`render_qrcode_terminal(...)` / `print_qrcode_terminal(...)` 则可以直接在控制台输出二维码。
+这里最关键的是把 `bot_token` 保存好。后面的所有消息示例都要用它。`qrcode_img_content` 当前返回的是一个可访问 URL；如果它指向的是二维码页面而不是原始图片，SDK 会在本地生成真正的二维码图片。`save_qrcode_image(...)` 会把结果保存到本地，`render_qrcode_terminal(...)` / `print_qrcode_terminal(...)` 则可以直接在控制台输出二维码。
 
-### 2) 使用 `bot_token` 收消息并回显
+### 2) 先收一条微信消息
 
-```python
-from wechat_link import Client, FileCursorStore
+最简单的运行方式：
 
-client = Client(bot_token="your-bot-token")
-store = FileCursorStore(".state/get_updates_buf.json")
-cursor = store.load() or ""
-
-updates = client.get_updates(cursor=cursor)
-if updates.next_cursor:
-    store.save(updates.next_cursor)
-
-for message in updates.messages:
-    text = message.text().strip()
-    if text and message.from_user_id and message.context_token:
-        client.send_text(
-            to_user_id=message.from_user_id,
-            text=f"echo: {text}",
-            context_token=message.context_token,
-        )
-
-client.close()
+```bash
+python examples/receive_once.py
 ```
 
-完整长轮询版本见：`examples/echo_bot.py`
+这个示例会：
 
-### 3) 发送图片
+- 读取你本地 `.state/wechat-link-session.json` 里的 `bot_token`
+- 发起一次 `get_updates()` 长轮询
+- 打印新消息里的 `from_user_id`、`context_token`、`text`
+- 把最近一条可回复消息保存到 `.state/last-message-context.json`
+
+最核心的接收逻辑其实很简单：
 
 ```python
-from wechat_link import Client
+updates = client.get_updates(cursor=cursor)
 
-client = Client(bot_token="your-bot-token")
+for message in updates.messages:
+    print(message.from_user_id)
+    print(message.context_token)
+    print(message.text())
+```
 
+如果你执行后“看起来没反应”，通常不是代码坏了，而是它正在等新消息：
+
+- `get_updates()` 是**长轮询**
+- 它会等一段时间看看有没有新消息
+- 如果你没有在脚本运行后从微信给 bot 发一条新消息，它就不会有可打印内容
+
+所以最简单的测试方式是：
+
+1. 先运行 `python examples/receive_once.py`
+2. 然后立刻用微信给 bot 发一条“你好”
+3. 回到终端看输出
+
+### 3) 回复刚收到的那条消息
+
+最简单的运行方式：
+
+```bash
+python examples/reply_once.py
+```
+
+这个示例会等待一条新的文本消息，收到后马上回复一条：
+
+```python
+client.send_text(
+    to_user_id=message.from_user_id,
+    text=f"received: {text}",
+    context_token=message.context_token,
+)
+```
+
+这里有两个关键点：
+
+- `to_user_id`：回给谁
+- `context_token`：回到哪一条会话上下文
+
+也就是说，这不是“凭空主动发消息”，而是**在刚收到的那条消息所在会话里回复**。
+
+### 4) 在已有会话里主动再发一条文本
+
+最简单的运行方式：
+
+```bash
+python examples/send_text_in_session.py
+```
+
+这个示例会读取 `.state/last-message-context.json`，然后在**同一会话里**主动再发一条文本。它本质上做的是：
+
+```python
+client.send_text(
+    to_user_id=context["from_user_id"],
+    text="this is a proactive message in the same session",
+    context_token=context["context_token"],
+)
+```
+
+这也是为什么我前面一直强调 `context_token`：当前最稳的“主动发送”，其实是**基于已经建立的会话继续发**，不是冷启动给任意用户随便发第一条消息。
+
+### 5) 补充：在已有会话里发送图片
+
+文本消息理解清楚后，再看媒体发送会容易很多。图片发送也是同一个思路：先准备上传，再在已有会话里发送。
+
+```python
 uploaded = client.upload_image(
     file_path="demo.jpg",
     to_user_id="user@im.wechat",
@@ -273,11 +340,25 @@ client.send_image(
     uploaded=uploaded,
     context_token="ctx-from-inbound-message",
 )
-
-client.close()
 ```
 
 文件 / 视频 / 语音的完整示例见：`examples/send_media.py`
+
+### 6) 推荐你按这个顺序跑示例
+
+如果你是第一次接入，最推荐的顺序是：
+
+1. `python examples/login_session.py`
+2. `python examples/receive_once.py`
+3. `python examples/reply_once.py`
+4. `python examples/send_text_in_session.py`
+5. `python examples/echo_bot.py`
+
+这样你会非常清楚地看到：
+
+- 微信消息是怎么被 SDK 收到的
+- 回复为什么必须带 `context_token`
+- “主动发送”在当前协议边界下到底是什么意思
 
 ## 快速上手教程
 
@@ -290,6 +371,14 @@ python examples/quickstart_three_steps.py
 ```
 
 仓库内的示例脚本会优先加载本地 `src/wechat_link`，不会误导入你环境里已安装的旧版 `site-packages/wechat_link`。脚本产生的二维码、会话和游标文件都会落在仓库根目录的 `.state/` 下，并打印绝对路径。
+
+如果你更想按“拆开的最小步骤”理解消息流程，优先看：
+
+- `examples/login_session.py`
+- `examples/receive_once.py`
+- `examples/reply_once.py`
+- `examples/send_text_in_session.py`
+- `examples/echo_bot.py`
 
 这个脚本会自动完成：
 
@@ -406,6 +495,7 @@ def start_echo(session):
     cursor = store.load() or ""
 
     print("Step 3/3: 启动 echo 循环，给机器人发消息测试")
+    print("现在请从微信给 bot 发一条新消息。")
 
     try:
         while True:
@@ -418,6 +508,11 @@ def start_echo(session):
             if updates.next_cursor:
                 cursor = updates.next_cursor
                 store.save(cursor)
+
+            if not updates.messages:
+                print("这一轮没有收到新消息。")
+                time.sleep(1)
+                continue
 
             for message in updates.messages:
                 text = message.text().strip()

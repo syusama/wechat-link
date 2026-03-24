@@ -124,6 +124,7 @@ def start_echo(session: dict[str, str]) -> None:
     cursor = store.load() or ""
 
     print("Step 3/3: start echo loop")
+    print("send a text message to the bot from WeChat now.")
 
     try:
         while True:
@@ -136,6 +137,11 @@ def start_echo(session: dict[str, str]) -> None:
             if updates.next_cursor:
                 cursor = updates.next_cursor
                 store.save(cursor)
+
+            if not updates.messages:
+                print("received 0 messages in this polling round.")
+                time.sleep(1)
+                continue
 
             for message in updates.messages:
                 text = message.text().strip()

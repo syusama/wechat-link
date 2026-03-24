@@ -199,6 +199,12 @@ pytest -q
 
 現行バージョンでは、**QR ログインの原語**を提供しており、完全なログインオーケストレータはまだ含めていません。
 
+最短の実行方法:
+
+```bash
+python examples/login_session.py
+```
+
 ```python
 import time
 from pathlib import Path
@@ -231,42 +237,77 @@ while True:
     time.sleep(1)
 ```
 
-ここで最も重要なのは `bot_token` を保存することです。後続の `Client(bot_token=...)` はその値を使います。現在の `qrcode_img_content` はアクセス可能な URL であり、その URL が生画像ではなく QR ページを返す場合でも、SDK がローカルで本物の QR コードを生成します。`save_qrcode_image(...)` はその結果をローカル画像として保存し、`render_qrcode_terminal(...)` / `print_qrcode_terminal(...)` ならターミナルにも表示できます。
+このスクリプトは `.state/wechat-link-session.json` にセッションを保存します。ここで最も重要なのは `bot_token` を保存することです。後続の `Client(bot_token=...)` はその値を使います。現在の `qrcode_img_content` はアクセス可能な URL であり、その URL が生画像ではなく QR ページを返す場合でも、SDK がローカルで本物の QR コードを生成します。`save_qrcode_image(...)` はその結果をローカル画像として保存し、`render_qrcode_terminal(...)` / `print_qrcode_terminal(...)` ならターミナルにも表示できます。
 
-### 2) `bot_token` で受信して Echo Bot を作る
+### 2) まず 1 件メッセージを受信する
 
-```python
-from wechat_link import Client, FileCursorStore
+最短の実行方法:
 
-client = Client(bot_token="your-bot-token")
-store = FileCursorStore(".state/get_updates_buf.json")
-cursor = store.load() or ""
-
-updates = client.get_updates(cursor=cursor)
-if updates.next_cursor:
-    store.save(updates.next_cursor)
-
-for message in updates.messages:
-    text = message.text().strip()
-    if text and message.from_user_id and message.context_token:
-        client.send_text(
-            to_user_id=message.from_user_id,
-            text=f"echo: {text}",
-            context_token=message.context_token,
-        )
-
-client.close()
+```bash
+python examples/receive_once.py
 ```
 
-長輪詢の完全な例は `examples/echo_bot.py` を参照してください
+このサンプルは次を行います。
 
-### 3) 画像を送る
+- ローカル `.state/wechat-link-session.json` から `bot_token` を読む
+- `get_updates()` を 1 回だけ長輪詢する
+- `from_user_id`、`context_token`、`text` を表示する
+- 返信に使える最新メッセージを `.state/last-message-context.json` に保存する
+
+受信の本質は次の部分です。
 
 ```python
-from wechat_link import Client
+updates = client.get_updates(cursor=cursor)
 
-client = Client(bot_token="your-bot-token")
+for message in updates.messages:
+    print(message.from_user_id)
+    print(message.context_token)
+    print(message.text())
+```
 
+反応がないように見える場合、多くは壊れているのではなく、新しい受信メッセージを待っています。`examples/receive_once.py` を起動した後、WeChat から Bot に新しいテキストを送ってください。
+
+### 3) 受け取ったメッセージに返信する
+
+最短の実行方法:
+
+```bash
+python examples/reply_once.py
+```
+
+返信の中核は次の呼び出しです。
+
+```python
+client.send_text(
+    to_user_id=message.from_user_id,
+    text=f"received: {text}",
+    context_token=message.context_token,
+)
+```
+
+ここで重要なのが `context_token` です。任意ユーザーへいきなり送るのではなく、同じ会話文脈に返信しています。
+
+### 4) 同じ会話でさらに 1 件テキストを送る
+
+最短の実行方法:
+
+```bash
+python examples/send_text_in_session.py
+```
+
+このサンプルは `.state/last-message-context.json` を読み、同じ会話にもう 1 件テキストを送ります。
+
+```python
+client.send_text(
+    to_user_id=context["from_user_id"],
+    text="this is a proactive message in the same session",
+    context_token=context["context_token"],
+)
+```
+
+### 5) 補足: 既存セッションで画像を送る
+
+```python
 uploaded = client.upload_image(
     file_path="demo.jpg",
     to_user_id="user@im.wechat",
@@ -277,11 +318,19 @@ client.send_image(
     uploaded=uploaded,
     context_token="ctx-from-inbound-message",
 )
-
-client.close()
 ```
 
 ファイル / 動画 / 音声の例は `examples/send_media.py` を参照してください
+
+### 6) おすすめの実行順
+
+初回は次の順で試すのが一番わかりやすいです。
+
+1. `python examples/login_session.py`
+2. `python examples/receive_once.py`
+3. `python examples/reply_once.py`
+4. `python examples/send_text_in_session.py`
+5. `python examples/echo_bot.py`
 
 ## クイックスタート完全版
 
@@ -294,6 +343,14 @@ python examples/quickstart_three_steps.py
 ```
 
 リポジトリ内のサンプルは、まずローカルの `src/wechat_link` を優先して読み込むため、`site-packages` に入っている旧版を誤って使いません。さらに、QR 画像・セッション・カーソルのファイルはリポジトリ直下の `.state/` に保存され、絶対パスも出力されます。
+
+一体型ではなく、分解された最小ステップで理解したい場合は、次のサンプルから始めてください。
+
+- `examples/login_session.py`
+- `examples/receive_once.py`
+- `examples/reply_once.py`
+- `examples/send_text_in_session.py`
+- `examples/echo_bot.py`
 
 このスクリプトは次を自動で行います。
 

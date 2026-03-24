@@ -199,6 +199,12 @@ Important detail:
 
 The current SDK intentionally provides **QR login primitives**, not a full login orchestrator.
 
+The simplest way to run this step is:
+
+```bash
+python examples/login_session.py
+```
+
 ```python
 import time
 from pathlib import Path
@@ -231,42 +237,77 @@ while True:
     time.sleep(1)
 ```
 
-The main thing to keep is `bot_token`. The next `Client(bot_token=...)` examples use that value. Right now `qrcode_img_content` is a reachable URL; if that URL points to a QR page instead of a raw image, the SDK generates a real QR code locally. `save_qrcode_image(...)` saves the result as a local image file, and `render_qrcode_terminal(...)` / `print_qrcode_terminal(...)` can render it directly in the terminal.
+That script saves the session into `.state/wechat-link-session.json`. The main thing to keep is `bot_token`. The next `Client(bot_token=...)` examples use that value. Right now `qrcode_img_content` is a reachable URL; if that URL points to a QR page instead of a raw image, the SDK generates a real QR code locally. `save_qrcode_image(...)` saves the result as a local image file, and `render_qrcode_terminal(...)` / `print_qrcode_terminal(...)` can render it directly in the terminal.
 
-### 2) Poll updates and build a simple echo bot
+### 2) Receive one WeChat message first
 
-```python
-from wechat_link import Client, FileCursorStore
+The simplest way to run this step is:
 
-client = Client(bot_token="your-bot-token")
-store = FileCursorStore(".state/get_updates_buf.json")
-cursor = store.load() or ""
-
-updates = client.get_updates(cursor=cursor)
-if updates.next_cursor:
-    store.save(updates.next_cursor)
-
-for message in updates.messages:
-    text = message.text().strip()
-    if text and message.from_user_id and message.context_token:
-        client.send_text(
-            to_user_id=message.from_user_id,
-            text=f"echo: {text}",
-            context_token=message.context_token,
-        )
-
-client.close()
+```bash
+python examples/receive_once.py
 ```
 
-For the full long-poll loop, see `examples/echo_bot.py`
+This example:
 
-### 3) Send an image
+- loads `bot_token` from local `.state/wechat-link-session.json`
+- makes one `get_updates()` long-poll request
+- prints `from_user_id`, `context_token`, and `text`
+- saves the last replyable message into `.state/last-message-context.json`
+
+The core receive flow is just:
 
 ```python
-from wechat_link import Client
+updates = client.get_updates(cursor=cursor)
 
-client = Client(bot_token="your-bot-token")
+for message in updates.messages:
+    print(message.from_user_id)
+    print(message.context_token)
+    print(message.text())
+```
 
+If the script looks like it is doing nothing, it is usually just waiting for a new inbound message. Start `examples/receive_once.py`, then send a fresh text message to the bot from WeChat.
+
+### 3) Reply to the message you just received
+
+The simplest way to run this step is:
+
+```bash
+python examples/reply_once.py
+```
+
+The core reply call is:
+
+```python
+client.send_text(
+    to_user_id=message.from_user_id,
+    text=f"received: {text}",
+    context_token=message.context_token,
+)
+```
+
+This is why `context_token` matters: you are replying inside the same conversation, not cold-starting a message to an arbitrary user.
+
+### 4) Send one more text in the same session
+
+The simplest way to run this step is:
+
+```bash
+python examples/send_text_in_session.py
+```
+
+It reads `.state/last-message-context.json` and sends one more text into the same session:
+
+```python
+client.send_text(
+    to_user_id=context["from_user_id"],
+    text="this is a proactive message in the same session",
+    context_token=context["context_token"],
+)
+```
+
+### 5) Supplement: send an image in an existing session
+
+```python
 uploaded = client.upload_image(
     file_path="demo.jpg",
     to_user_id="user@im.wechat",
@@ -277,11 +318,19 @@ client.send_image(
     uploaded=uploaded,
     context_token="ctx-from-inbound-message",
 )
-
-client.close()
 ```
 
 For file / video / voice examples, see `examples/send_media.py`
+
+### 6) Recommended example order
+
+For the clearest learning path, run the examples in this order:
+
+1. `python examples/login_session.py`
+2. `python examples/receive_once.py`
+3. `python examples/reply_once.py`
+4. `python examples/send_text_in_session.py`
+5. `python examples/echo_bot.py`
 
 ## Fast Onboarding Tutorial
 
@@ -294,6 +343,14 @@ python examples/quickstart_three_steps.py
 ```
 
 Repository examples prefer local `src/wechat_link` first, so they do not accidentally import an older installed package from `site-packages`. They also write the QR image, session, and cursor files into the repository-level `.state/` directory and print absolute paths.
+
+If you want the split, minimal learning path instead of the all-in-one flow, start with:
+
+- `examples/login_session.py`
+- `examples/receive_once.py`
+- `examples/reply_once.py`
+- `examples/send_text_in_session.py`
+- `examples/echo_bot.py`
 
 The script will:
 

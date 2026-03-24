@@ -45,39 +45,44 @@ For QR display, `qrcode_img_content` is currently a URL. If that URL points to a
 ## Minimal usage example
 
 ```python
-from wechat_link import Client
+from wechat_link import Client, FileCursorStore
 
 client = Client(bot_token="your-bot-token")
-messages = client.get_updates(cursor="").messages
+store = FileCursorStore(".state/get_updates_buf.json")
+cursor = store.load() or ""
+updates = client.get_updates(cursor=cursor)
 
-print("messages:", len(messages))
+if updates.next_cursor:
+    store.save(updates.next_cursor)
+
+for message in updates.messages:
+    print("from_user_id:", message.from_user_id)
+    print("context_token:", message.context_token)
+    print("text:", message.text())
 
 client.close()
 ```
 
 ## Quick example
 
+If you want the clearest learning path, use these repository examples in order:
+
+1. `python examples/login_session.py`
+2. `python examples/receive_once.py`
+3. `python examples/reply_once.py`
+4. `python examples/send_text_in_session.py`
+5. `python examples/echo_bot.py`
+
+The important boundary is that replying or sending within an existing conversation requires the upstream `context_token`.
+
+Core reply example:
+
 ```python
-from wechat_link import Client, FileCursorStore
-
-client = Client(bot_token="your-bot-token")
-store = FileCursorStore(".state/get_updates_buf.json")
-cursor = store.load() or ""
-
-updates = client.get_updates(cursor=cursor)
-if updates.next_cursor:
-    store.save(updates.next_cursor)
-
-for message in updates.messages:
-    text = message.text().strip()
-    if text and message.from_user_id and message.context_token:
-        client.send_text(
-            to_user_id=message.from_user_id,
-            text=f"echo: {text}",
-            context_token=message.context_token,
-        )
-
-client.close()
+client.send_text(
+    to_user_id=message.from_user_id,
+    text=f"received: {message.text()}",
+    context_token=message.context_token,
+)
 ```
 
 ## Full three-step example
