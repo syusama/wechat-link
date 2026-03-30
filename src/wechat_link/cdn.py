@@ -13,6 +13,20 @@ def build_cdn_upload_url(*, upload_param: str, filekey: str, cdn_base_url: str) 
     return f"{cdn_base_url}/upload?encrypted_query_param={upload_param}&filekey={filekey}"
 
 
+def _resolve_cdn_download_url(
+    *,
+    encrypted_query_param: str,
+    cdn_base_url: str,
+    full_url: str | None = None,
+) -> str:
+    if full_url:
+        return full_url
+    return build_cdn_download_url(
+        encrypted_query_param=encrypted_query_param,
+        cdn_base_url=cdn_base_url,
+    )
+
+
 def upload_buffer_to_cdn(
     *,
     buffer: bytes,
@@ -46,11 +60,13 @@ def download_and_decrypt_buffer(
     encrypted_query_param: str,
     aes_key_base64: str,
     cdn_base_url: str,
+    full_url: str | None = None,
     transport: httpx.BaseTransport | None = None,
 ) -> bytes:
-    url = build_cdn_download_url(
+    url = _resolve_cdn_download_url(
         encrypted_query_param=encrypted_query_param,
         cdn_base_url=cdn_base_url,
+        full_url=full_url,
     )
     with httpx.Client(transport=transport) as client:
         response = client.get(url)
@@ -63,11 +79,13 @@ def download_plain_buffer(
     *,
     encrypted_query_param: str,
     cdn_base_url: str,
+    full_url: str | None = None,
     transport: httpx.BaseTransport | None = None,
 ) -> bytes:
-    url = build_cdn_download_url(
+    url = _resolve_cdn_download_url(
         encrypted_query_param=encrypted_query_param,
         cdn_base_url=cdn_base_url,
+        full_url=full_url,
     )
     with httpx.Client(transport=transport) as client:
         response = client.get(url)

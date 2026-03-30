@@ -10,6 +10,7 @@ from typing import Any, TextIO
 import httpx
 from PIL import Image, UnidentifiedImageError
 
+from wechat_link.cdn import download_and_decrypt_buffer, download_plain_buffer
 from wechat_link.headers import build_wechat_headers
 from wechat_link.media import (
     MEDIA_TYPE_FILE,
@@ -28,6 +29,8 @@ from wechat_link.message_builders import (
 )
 from wechat_link.models import (
     ConfigResponse,
+    InboundMediaRef,
+    InboundMessageItem,
     LoginQRCode,
     QRCodeStatus,
     TypingResponse,
@@ -167,6 +170,34 @@ class Client:
         }
         response = self._post_json("ilink/bot/getupdates", payload)
         return UpdatesResponse.from_dict(response)
+
+    def download_media(self, media: InboundMediaRef) -> bytes:
+        if media.aes_key:
+            return download_and_decrypt_buffer(
+                encrypted_query_param=media.encrypt_query_param,
+                aes_key_base64=media.aes_key,
+                cdn_base_url=self.cdn_base_url,
+                full_url=media.full_url,
+                transport=self._cdn_transport,
+            )
+
+        return download_plain_buffer(
+            encrypted_query_param=media.encrypt_query_param,
+            cdn_base_url=self.cdn_base_url,
+            full_url=media.full_url,
+            transport=self._cdn_transport,
+        )
+
+    def download_message_item(
+        self,
+        item: InboundMessageItem,
+        *,
+        thumb: bool = False,
+    ) -> bytes:
+        media = item.thumb_media if thumb else item.media
+        if media is None:
+            raise ValueError("message item has no downloadable media")
+        return self.download_media(media)
 
     def get_config(
         self,

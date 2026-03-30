@@ -71,3 +71,23 @@ def test_download_and_decrypt_buffer_restores_plaintext() -> None:
     )
 
     assert result == plaintext
+
+
+def test_download_and_decrypt_buffer_prefers_full_url_when_present() -> None:
+    plaintext = b"wechat-link-file"
+    aes_key = b"0123456789abcdef"
+    encrypted = encrypt_aes_ecb(plaintext, aes_key)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == "https://cdn.example.com/path/to/file"
+        return httpx.Response(200, content=encrypted)
+
+    result = download_and_decrypt_buffer(
+        encrypted_query_param="ignored-download-param",
+        aes_key_base64="MDEyMzQ1Njc4OWFiY2RlZg==",
+        cdn_base_url="https://novac2c.cdn.weixin.qq.com/c2c",
+        full_url="https://cdn.example.com/path/to/file",
+        transport=httpx.MockTransport(handler),
+    )
+
+    assert result == plaintext

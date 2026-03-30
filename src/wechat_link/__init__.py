@@ -1,6 +1,8 @@
 from wechat_link.client import Client
 from wechat_link.models import (
     ConfigResponse,
+    InboundMediaRef,
+    InboundMessageItem,
     LoginQRCode,
     QRCodeStatus,
     TypingResponse,
@@ -9,17 +11,30 @@ from wechat_link.models import (
     UpdatesResponse,
     WeixinMessage,
 )
-from wechat_link.store import FileCursorStore
+from wechat_link.openclaw_adapter import (
+    OpenClawInboundContext,
+    OpenClawOutboundContext,
+    OpenClawWeixinAdapter,
+    markdown_to_plain_text,
+)
+from wechat_link.store import FileContextTokenStore, FileCursorStore
 
 __all__ = [
     "ConfigResponse",
     "FileCursorStore",
+    "InboundMediaRef",
+    "InboundMessageItem",
     "LoginQRCode",
+    "markdown_to_plain_text",
+    "OpenClawInboundContext",
+    "OpenClawOutboundContext",
+    "OpenClawWeixinAdapter",
     "QRCodeStatus",
     "TypingResponse",
     "UploadedMedia",
     "UploadUrlResponse",
     "UpdatesResponse",
     "Client",
+    "FileContextTokenStore",
     "WeixinMessage",
 ]

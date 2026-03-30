@@ -99,6 +99,7 @@ flowchart LR
 - **`wechat_link.client`**：对 iLink API 的核心调用封装
 - **`wechat_link.media`**：媒体上传编排、缩略图元数据处理、CDN 上传流程
 - **`wechat_link.cdn` / `wechat_link.crypto`**：CDN 传输与 AES 细节
+- **`wechat_link.openclaw_adapter`**：对齐官方 OpenClaw 微信插件的入站 / 出站适配层
 - **`wechat_link.relay`**：薄 FastAPI 中转层，方便把 SDK 暴露为 HTTP 服务
 - **`wechat_link.store`**：`get_updates_buf` 的持久化辅助
 
@@ -138,6 +139,7 @@ sequenceDiagram
 | 终端打印二维码 | 已实现 | `render_qrcode_terminal()` / `print_qrcode_terminal()` |
 | 查询二维码状态 | 已实现 | `get_qrcode_status()` |
 | 长轮询收消息 | 已实现 | `get_updates()` |
+| 入站多媒体解析 / 下载 | 已实现 | `WeixinMessage.items()` / `Client.download_message_item()` |
 | 游标持久化 | 已实现 | `FileCursorStore` |
 | 发送文本 | 已实现 | `send_text()` |
 | 获取 typing 配置 | 已实现 | `get_config()` |
@@ -147,6 +149,7 @@ sequenceDiagram
 | 文件上传 / 发送 | 已实现 | `upload_file()` / `send_file()` |
 | 视频上传 / 发送 | 已实现 | 支持显式 `thumb_path` |
 | 语音上传 / 发送 | 已实现 | `upload_voice()` / `send_voice()` |
+| OpenClaw 输入输出对齐 | 已实现 | `OpenClawWeixinAdapter` |
 | 薄 Relay 服务 | 已实现 | FastAPI 路由封装 |
 | 自动视频抽帧 | 未实现 | 当前不做隐式媒体处理 |
 | 自动语音转码 | 未实现 | 当前不引入 ffmpeg / silk 工具链 |
@@ -350,6 +353,12 @@ client.send_image(
 
 文件 / 视频 / 语音的完整示例见：`examples/send_media.py`
 
+如果你要验证“微信发图片 / 视频 / 语音 / 文件给 SDK”这条链路，可以直接运行：
+
+```bash
+python examples/receive_media_once.py
+```
+
 ### 6) 推荐你按这个顺序跑示例
 
 如果你是第一次接入，最推荐的顺序是：
@@ -365,6 +374,65 @@ client.send_image(
 - 微信消息是怎么被 SDK 收到的
 - 回复为什么必须带 `context_token`
 - “主动发送”在当前协议边界下到底是什么意思
+
+多媒体和 OpenClaw 相关示例建议继续看：
+
+- `python examples/receive_media_once.py`：接收并落盘图片 / 视频 / 语音 / 文件
+- `python examples/send_media.py`：发送图片 / 文件 / 视频 / 语音
+- `python examples/openclaw_adapter_once.py`：输出 OpenClaw 上下文，并展示压缩包自动解压后的字段
+
+## OpenClaw 输入输出对齐
+
+如果你在 Claw 侧使用官方终端：
+
+```bash
+npm install -g openclaw@latest --registry=https://registry.npmmirror.com
+```
+
+官方 `@tencent-weixin/openclaw-weixin` 插件真正对接 OpenClaw 的，不是原始 Weixin JSON，而是一层归一化后的上下文对象和本地媒体路径。`wechat-link` 现在提供了同样目的的 Python 适配层：`OpenClawWeixinAdapter`。
+
+```python
+from wechat_link import Client, OpenClawWeixinAdapter
+
+client = Client(bot_token="your-bot-token")
+adapter = OpenClawWeixinAdapter(
+    client,
+    account_id="wechat-account-1",
+    state_dir=".state",
+)
+
+updates = client.get_updates(cursor="")
+message = updates.messages[0]
+context = adapter.build_inbound_context(message)
+
+print(context.to_dict())
+
+adapter.send_reply_from_context(
+    context,
+    text="**received** via OpenClaw adapter",
+    media_path="report.md",
+)
+```
+
+这个适配层当前和官方 OpenClaw 微信插件对齐的点主要有：
+
+- 入站输出 `Body`、`From`、`To`、`AccountId`、`MediaPath`、`MediaType`、`context_token`
+- 入站同时补充 `MediaPaths` / `MediaTypes`，方便 Claw 侧继续消费多文件场景
+- 入站媒体优先级与官方一致：`image > video > file > voice`
+- 当主消息只有文本、但引用消息里带媒体时，会回退到引用媒体
+- 语音消息如果已经带转写文本，默认把文本作为 `Body`，不重复下载语音媒体
+- `context_token` 会按 `account_id + user_id` 本地持久化，便于后续出站回复继续沿用同一会话
+- 如果入站文件是标准压缩包（当前支持 zip / tar 系列），会先自动安全解压，再把首个解压结果作为主 `MediaPath`，同时把全部解压结果放进 `MediaPaths`
+- 压缩包场景还会补充 `ArchivePath`、`ArchiveExtracted`、`ArchiveEntries`、`MediaDir`，方便 Claw 侧继续处理解压后的文件集合
+- 出站文本会先做 markdown 去格式化，再按本地文件后缀自动路由到图片 / 视频 / 语音 / 文件发送链路
+
+可以直接运行仓库示例：
+
+```bash
+python examples/openclaw_adapter_once.py
+```
+
+如果收到的是压缩包，示例会直接打印解压后的 `MediaPaths`、`ArchiveEntries` 等字段。
 
 ## 快速上手教程
 

@@ -73,6 +73,55 @@ def test_get_updates_posts_cursor_and_base_info() -> None:
     assert result.messages[0].text() == "你好"
 
 
+def test_get_updates_exposes_typed_inbound_media_items() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "POST"
+        assert request.url.path == "/ilink/bot/getupdates"
+        return httpx.Response(
+            200,
+            json={
+                "ret": 0,
+                "msgs": [
+                    {
+                        "from_user_id": "user@im.wechat",
+                        "to_user_id": "bot@im.bot",
+                        "context_token": "ctx-1",
+                        "item_list": [
+                            {
+                                "type": 2,
+                                "image_item": {
+                                    "media": {
+                                        "encrypt_query_param": "image-download-param",
+                                        "aes_key": "MDEyMzQ1Njc4OWFiY2RlZg==",
+                                        "encrypt_type": 1,
+                                    },
+                                    "mid_size": 32,
+                                },
+                            }
+                        ],
+                    }
+                ],
+                "get_updates_buf": "cursor-2",
+            },
+        )
+
+    client = Client(
+        bot_token="bot-token",
+        transport=httpx.MockTransport(handler),
+        channel_version="0.1.0",
+    )
+
+    result = client.get_updates(cursor="cursor-1")
+    message = result.messages[0]
+    media_item = message.media_items()[0]
+
+    assert message.kind() == "image"
+    assert media_item.kind == "image"
+    assert media_item.media is not None
+    assert media_item.media.encrypt_query_param == "image-download-param"
+    assert media_item.size == 32
+
+
 def test_send_text_requires_context_token() -> None:
     client = Client()
 

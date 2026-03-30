@@ -99,6 +99,7 @@ flowchart LR
 - **`wechat_link.client`** — core iLink API client
 - **`wechat_link.media`** — media orchestration, thumbnail metadata, CDN upload flow
 - **`wechat_link.cdn` / `wechat_link.crypto`** — CDN transport and AES details
+- **`wechat_link.openclaw_adapter`** — OpenClaw-compatible inbound/outbound normalization layer
 - **`wechat_link.relay`** — thin FastAPI relay layer
 - **`wechat_link.store`** — minimal persistence helper for `get_updates_buf`
 
@@ -138,6 +139,7 @@ sequenceDiagram
 | Print QR in terminal | Available | `render_qrcode_terminal()` / `print_qrcode_terminal()` |
 | Query QR code status | Available | `get_qrcode_status()` |
 | Long-poll inbound updates | Available | `get_updates()` |
+| Parse / download inbound media | Available | `WeixinMessage.items()` / `Client.download_message_item()` |
 | Persist polling cursor | Available | `FileCursorStore` |
 | Send text messages | Available | `send_text()` |
 | Fetch typing config | Available | `get_config()` |
@@ -147,6 +149,7 @@ sequenceDiagram
 | Upload / send file | Available | `upload_file()` / `send_file()` |
 | Upload / send video | Available | Explicit `thumb_path` supported |
 | Upload / send voice | Available | `upload_voice()` / `send_voice()` |
+| OpenClaw-aligned I/O adapter | Available | `OpenClawWeixinAdapter` |
 | Thin relay service | Available | FastAPI-based relay |
 | Automatic video frame extraction | Not implemented | No implicit media processing |
 | Automatic audio transcoding | Not implemented | No ffmpeg / silk toolchain bundled |
@@ -324,6 +327,12 @@ client.send_image(
 
 For file / video / voice examples, see `examples/send_media.py`
 
+To verify the WeChat -> SDK media receive path directly, run:
+
+```bash
+python examples/receive_media_once.py
+```
+
 ### 6) Recommended example order
 
 For the clearest learning path, run the examples in this order:
@@ -333,6 +342,65 @@ For the clearest learning path, run the examples in this order:
 3. `python examples/reply_once.py`
 4. `python examples/send_text_in_session.py`
 5. `python examples/echo_bot.py`
+
+Advanced media/OpenClaw examples:
+
+- `python examples/receive_media_once.py` downloads inbound image / video / voice / file messages
+- `python examples/send_media.py` sends image / file / video / voice messages
+- `python examples/openclaw_adapter_once.py` prints the OpenClaw-style context, including archive extraction fields
+
+## OpenClaw I/O Alignment
+
+If you are running the official OpenClaw terminal install path:
+
+```bash
+npm install -g openclaw@latest --registry=https://registry.npmmirror.com
+```
+
+The official `@tencent-weixin/openclaw-weixin` plugin does not hand raw Weixin JSON to OpenClaw. It converts inbound messages into a normalized context object and downloads media to a local `MediaPath` first. `wechat-link` now exposes the same style of Python adapter through `OpenClawWeixinAdapter`.
+
+```python
+from wechat_link import Client, OpenClawWeixinAdapter
+
+client = Client(bot_token="your-bot-token")
+adapter = OpenClawWeixinAdapter(
+    client,
+    account_id="wechat-account-1",
+    state_dir=".state",
+)
+
+updates = client.get_updates(cursor="")
+message = updates.messages[0]
+context = adapter.build_inbound_context(message)
+
+print(context.to_dict())
+
+adapter.send_reply_from_context(
+    context,
+    text="**received** via OpenClaw adapter",
+    media_path="report.md",
+)
+```
+
+Current alignment points:
+
+- inbound output includes `Body`, `From`, `To`, `AccountId`, `MediaPath`, `MediaType`, and `context_token`
+- inbound output also exposes `MediaPaths` / `MediaTypes` for multi-file follow-up handling on the Claw side
+- inbound media priority matches the official plugin: `image > video > file > voice`
+- quoted media is used as a fallback when the main message only contains text
+- voice transcripts become `Body`, and voice media is skipped when a transcript already exists
+- `context_token` is persisted locally by `account_id + user_id`
+- standard inbound archives (`zip` and tar-family archives) are safely extracted before handoff; the first extracted file becomes `MediaPath` and all extracted files are exposed through `MediaPaths`
+- archive handoff also exposes `ArchivePath`, `ArchiveExtracted`, `ArchiveEntries`, and `MediaDir` so Claw can keep processing the extracted files
+- outbound markdown is flattened to plain text before routing local files into image / video / voice / file send flows
+
+Runnable repository example:
+
+```bash
+python examples/openclaw_adapter_once.py
+```
+
+If the inbound message contains an archive, that example also prints the extracted `MediaPaths` and `ArchiveEntries`.
 
 ## Fast Onboarding Tutorial
 

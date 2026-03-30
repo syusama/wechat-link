@@ -10,6 +10,7 @@ Scan to log in, then receive messages, reply, and send media without building a 
 
 - QR login primitives: `get_bot_qrcode()` / `get_qrcode_status()`
 - Long polling: `get_updates()`
+- Typed inbound media parsing / download: `WeixinMessage.items()` / `Client.download_message_item()`
 - Text messaging: `send_text()`
 - Typing support: `get_config()` / `send_typing()`
 - Media workflow:
@@ -18,6 +19,7 @@ Scan to log in, then receive messages, reply, and send media without building a 
   - `upload_file()` / `send_file()`
   - `upload_video()` / `send_video()`
   - `upload_voice()` / `send_voice()`
+- OpenClaw-compatible adapter: `OpenClawWeixinAdapter` with inbound archive extraction and outbound image/video/voice/file routing
 - Optional FastAPI relay layer
 
 ## Installation
@@ -86,6 +88,12 @@ client.send_text(
     context_token=message.context_token,
 )
 ```
+
+Advanced repository examples:
+
+- `python examples/receive_media_once.py` downloads inbound image / video / voice / file messages
+- `python examples/send_media.py` sends image / file / video / voice messages
+- `python examples/openclaw_adapter_once.py` prints the OpenClaw-style context, including archive extraction metadata
 
 ## Full three-step example
 
