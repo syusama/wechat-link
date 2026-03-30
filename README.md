@@ -140,6 +140,7 @@ sequenceDiagram
 | 查询二维码状态 | 已实现 | `get_qrcode_status()` |
 | 长轮询收消息 | 已实现 | `get_updates()` |
 | 入站多媒体解析 / 下载 | 已实现 | `WeixinMessage.items()` / `Client.download_message_item()` |
+| 入站多条消息聚合 | 已实现 | `OpenClawInboundAggregator(merge_window_seconds=8)` |
 | 游标持久化 | 已实现 | `FileCursorStore` |
 | 发送文本 | 已实现 | `send_text()` |
 | 获取 typing 配置 | 已实现 | `get_config()` |
@@ -380,6 +381,7 @@ python examples/receive_media_once.py
 - `python examples/receive_media_once.py`：接收并落盘图片 / 视频 / 语音 / 文件
 - `python examples/send_media.py`：发送图片 / 文件 / 视频 / 语音
 - `python examples/openclaw_adapter_once.py`：输出 OpenClaw 上下文，并展示压缩包自动解压后的字段
+- `python examples/openclaw_aggregate_once.py`：把“先发图，再补一句话”在 8 秒窗口内聚合成一次 OpenClaw 请求
 
 ## OpenClaw 输入输出对齐
 
@@ -433,6 +435,34 @@ python examples/openclaw_adapter_once.py
 ```
 
 如果收到的是压缩包，示例会直接打印解压后的 `MediaPaths`、`ArchiveEntries` 等字段。
+
+如果你要解决“用户先发图片，再单独发一句问题”这种微信侧拆成两条消息、但 LLM 侧希望合成一次多模态输入的场景，可以直接在适配层外加：
+
+```python
+from wechat_link import OpenClawInboundAggregator
+
+aggregator = OpenClawInboundAggregator(adapter, merge_window_seconds=8)
+
+for message in updates.messages:
+    for context in aggregator.ingest(message):
+        handle_openclaw_context(context)
+
+for context in aggregator.flush_ready():
+    handle_openclaw_context(context)
+```
+
+这个聚合器的默认策略是：
+
+- 纯文本消息不延迟，照常立即下发
+- 媒体消息会在 8 秒窗口内等待后续补充文本
+- 如果同一会话里 8 秒内又来了文本，会自动和前面的图片 / 视频 / 文件合并
+- 如果 8 秒内没有补充文本，就把媒体消息单独 flush，下游仍然可以处理
+
+可以直接运行：
+
+```bash
+python examples/openclaw_aggregate_once.py
+```
 
 ## 快速上手教程
 

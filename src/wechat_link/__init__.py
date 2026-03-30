@@ -11,6 +11,7 @@ from wechat_link.models import (
     UpdatesResponse,
     WeixinMessage,
 )
+from wechat_link.openclaw_aggregator import OpenClawInboundAggregator
 from wechat_link.openclaw_adapter import (
     OpenClawInboundContext,
     OpenClawOutboundContext,
@@ -27,6 +28,7 @@ __all__ = [
     "LoginQRCode",
     "markdown_to_plain_text",
     "OpenClawInboundContext",
+    "OpenClawInboundAggregator",
     "OpenClawOutboundContext",
     "OpenClawWeixinAdapter",
     "QRCodeStatus",

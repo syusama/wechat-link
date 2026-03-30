@@ -1,6 +1,7 @@
 import wechat_link
 from wechat_link import Client
 from wechat_link.client import Client as ClientFromModule
+from wechat_link.openclaw_aggregator import OpenClawInboundAggregator
 from wechat_link.openclaw_adapter import OpenClawWeixinAdapter
 
 
@@ -15,3 +16,7 @@ def test_legacy_client_name_is_not_exported():
 
 def test_top_level_exports_openclaw_adapter():
     assert wechat_link.OpenClawWeixinAdapter is OpenClawWeixinAdapter
+
+
+def test_top_level_exports_openclaw_aggregator():
+    assert wechat_link.OpenClawInboundAggregator is OpenClawInboundAggregator

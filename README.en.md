@@ -140,6 +140,7 @@ sequenceDiagram
 | Query QR code status | Available | `get_qrcode_status()` |
 | Long-poll inbound updates | Available | `get_updates()` |
 | Parse / download inbound media | Available | `WeixinMessage.items()` / `Client.download_message_item()` |
+| Aggregate recent inbound turns | Available | `OpenClawInboundAggregator(merge_window_seconds=8)` |
 | Persist polling cursor | Available | `FileCursorStore` |
 | Send text messages | Available | `send_text()` |
 | Fetch typing config | Available | `get_config()` |
@@ -348,6 +349,7 @@ Advanced media/OpenClaw examples:
 - `python examples/receive_media_once.py` downloads inbound image / video / voice / file messages
 - `python examples/send_media.py` sends image / file / video / voice messages
 - `python examples/openclaw_adapter_once.py` prints the OpenClaw-style context, including archive extraction fields
+- `python examples/openclaw_aggregate_once.py` merges “send image first, ask later” into one OpenClaw turn within an 8-second window
 
 ## OpenClaw I/O Alignment
 
@@ -401,6 +403,34 @@ python examples/openclaw_adapter_once.py
 ```
 
 If the inbound message contains an archive, that example also prints the extracted `MediaPaths` and `ArchiveEntries`.
+
+If you need the common WeChat pattern where the user sends an image first and types the question in a second message, add the inbound aggregator in front of your OpenClaw handler:
+
+```python
+from wechat_link import OpenClawInboundAggregator
+
+aggregator = OpenClawInboundAggregator(adapter, merge_window_seconds=8)
+
+for message in updates.messages:
+    for context in aggregator.ingest(message):
+        handle_openclaw_context(context)
+
+for context in aggregator.flush_ready():
+    handle_openclaw_context(context)
+```
+
+Default behavior:
+
+- plain text messages are emitted immediately
+- media-only messages wait up to 8 seconds for follow-up text in the same conversation
+- recent follow-up text is merged with the earlier image / video / file into a single OpenClaw context
+- if no text arrives within 8 seconds, the media-only context is flushed on its own
+
+Runnable example:
+
+```bash
+python examples/openclaw_aggregate_once.py
+```
 
 ## Fast Onboarding Tutorial
 
